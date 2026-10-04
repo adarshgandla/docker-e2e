@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Docker Explained</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  background:#0a0c14;color:#e2e8f0;
+  height:100vh;overflow:hidden;
+}
+
+/* ── SLIDES ── */
+.slides{width:100%;height:100vh;position:relative}
+.slide{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;justify-content:center;align-items:center;
+  padding:60px 80px;text-align:center;
+  opacity:0;pointer-events:none;
+  transition:opacity .45s ease;
+}
+.slide.active{opacity:1;pointer-events:all}
+
+/* ── NAV ── */
+.nav{
+  position:fixed;bottom:36px;left:50%;transform:translateX(-50%);
+  display:flex;align-items:center;gap:20px;z-index:100;
+}
+.nav-btn{
+  width:48px;height:48px;border-radius:50%;
+  border:2px solid #3d4470;background:#1a1d2e;
+  color:#7c85ff;font-size:20px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .2s;
+}
+.nav-btn:hover{background:#7c85ff;color:#fff;border-color:#7c85ff}
+.nav-btn:disabled{opacity:.2;cursor:default}
+.slide-counter{font-size:13px;color:#475569;min-width:70px;text-align:center}
+
+/* ── PROGRESS ── */
+.progress{
+  position:fixed;top:0;left:0;height:3px;
+  background:linear-gradient(90deg,#7c85ff,#a78bfa);
+  transition:width .4s ease;z-index:100;
+}
+
+/* ── SLIDE NUMBER DOTS ── */
+.dots{
+  position:fixed;right:24px;top:50%;transform:translateY(-50%);
+  display:flex;flex-direction:column;gap:8px;z-index:100;
+}
+.dot{
+  width:8px;height:8px;border-radius:50%;
+  background:#2d3150;cursor:pointer;transition:all .2s;
+}
+.dot.active{background:#7c85ff;transform:scale(1.4)}
+
+/* ── TYPOGRAPHY ── */
+.label{
+  font-size:11px;font-weight:800;letter-spacing:3px;text-transform:uppercase;
+  color:#7c85ff;margin-bottom:16px;
+}
+h1{font-size:54px;font-weight:800;line-height:1.1;margin-bottom:20px}
+h2{font-size:38px;font-weight:800;line-height:1.2;margin-bottom:16px}
+h3{font-size:22px;font-weight:700;margin-bottom:10px}
+.big{font-size:72px;margin-bottom:20px;line-height:1}
+.sub{font-size:18px;color:#94a3b8;max-width:640px;line-height:1.6}
+.sub strong{color:#e2e8f0}
+
+/* ── CARDS ROW ── */
+.cards{display:flex;gap:20px;margin-top:30px;flex-wrap:wrap;justify-content:center}
+.card{
+  background:#1a1d2e;border:1px solid #2d3150;border-radius:14px;
+  padding:24px 28px;flex:1;min-width:200px;max-width:260px;text-align:left;
+}
+.card .icon{font-size:32px;margin-bottom:10px}
+.card h3{font-size:16px;margin-bottom:6px;color:#fff}
+.card p{font-size:14px;color:#64748b;line-height:1.5}
+
+/* ── CODE ── */
+.code-block{
+  background:#0d0f1a;border:1px solid #2d3150;border-radius:12px;
+  padding:24px 28px;text-align:left;
+  font-family:'Cascadia Code','Fira Code',monospace;
+  font-size:14px;line-height:2;margin-top:20px;max-width:580px;width:100%;
+}
+.ck{color:#7c85ff}
+.cv{color:#86efac}
+.cc{color:#475569;font-style:italic}
+.cp{color:#f472b6}
+
+/* ── BIG FLOW ── */
+.flow{display:flex;align-items:center;gap:0;margin-top:30px;flex-wrap:wrap;justify-content:center}
+.flow-step{
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+  background:#1a1d2e;border:1px solid #2d3150;border-radius:14px;
+  padding:20px 24px;min-width:120px;
+}
+.flow-step .fs-icon{font-size:36px}
+.flow-step .fs-label{font-size:13px;font-weight:700;color:#e2e8f0}
+.flow-step .fs-sub{font-size:11px;color:#64748b}
+.flow-arrow{font-size:28px;color:#3d4470;margin:0 8px;flex-shrink:0}
+
+/* ── TWO COL ── */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:32px;max-width:800px;width:100%;margin-top:20px;text-align:left}
+.col-label{font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px}
+
+/* ── HIGHLIGHT ── */
+.hl{
+  background:#1e2235;border-left:4px solid #7c85ff;
+  border-radius:0 10px 10px 0;padding:14px 20px;
+  font-size:16px;color:#c7d2fe;max-width:600px;margin-top:20px;
+  text-align:left;line-height:1.6;
+}
+
+/* ── CMD PILL ── */
+.cmd-pill{
+  display:inline-block;background:#0d0f1a;border:1px solid #166534;
+  border-radius:8px;padding:10px 20px;
+  font-family:'Cascadia Code','Fira Code',monospace;
+  font-size:16px;color:#86efac;margin:8px 4px;
+}
+
+/* ── PORT TABLE ── */
+.port-row{
+  display:flex;align-items:center;gap:16px;padding:12px 20px;
+  background:#1a1d2e;border-radius:10px;margin:6px 0;max-width:560px;width:100%;
+}
+.port-num{font-family:monospace;color:#7c85ff;font-size:18px;font-weight:700;min-width:90px}
+.port-desc{color:#94a3b8;font-size:14px;flex:1;text-align:left}
+.port-badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:700}
+.pb-web{background:#1e3a5f;color:#60a5fa}
+.pb-tool{background:#3b1f1f;color:#f87171}
+
+/* ── BIG ANALOGY ── */
+.analogy-box{
+  background:linear-gradient(135deg,#1a1d2e,#1e2235);
+  border:1px solid #3d4470;border-radius:18px;
+  padding:36px 48px;max-width:760px;width:100%;margin-top:24px;
+}
+.a-row{display:flex;align-items:center;gap:0;justify-content:center;flex-wrap:wrap}
+.a-item{display:flex;flex-direction:column;align-items:center;min-width:130px;padding:10px}
+.a-item .a-icon{font-size:48px;margin-bottom:8px}
+.a-item .a-top{font-size:12px;color:#475569;font-weight:600;letter-spacing:1px;text-transform:uppercase}
+.a-item .a-label{font-size:15px;font-weight:700;color:#e2e8f0;margin:4px 0}
+.a-item .a-sub{font-size:12px;color:#64748b}
+.a-arr{font-size:32px;color:#2d3150;margin:0 4px}
+
+/* ── SLIDE THEMES ── */
+.slide-title   {background:radial-gradient(ellipse at 30% 40%,#1a1d2e 0%,#0a0c14 70%)}
+.slide-problem {background:radial-gradient(ellipse at 70% 30%,#1f0e0e 0%,#0a0c14 70%)}
+.slide-terms   {background:radial-gradient(ellipse at 50% 60%,#0e1020 0%,#0a0c14 70%)}
+.slide-recipe  {background:radial-gradient(ellipse at 20% 50%,#0a1628 0%,#0a0c14 70%)}
+.slide-pack    {background:radial-gradient(ellipse at 80% 40%,#0e1a0e 0%,#0a0c14 70%)}
+.slide-image   {background:radial-gradient(ellipse at 40% 30%,#141028 0%,#0a0c14 70%)}
+.slide-share   {background:radial-gradient(ellipse at 60% 70%,#0e1428 0%,#0a0c14 70%)}
+.slide-run     {background:radial-gradient(ellipse at 30% 60%,#0a1f12 0%,#0a0c14 70%)}
+.slide-compose {background:radial-gradient(ellipse at 70% 50%,#1a1208 0%,#0a0c14 70%)}
+.slide-ports   {background:radial-gradient(ellipse at 50% 40%,#0e1428 0%,#0a0c14 70%)}
+.slide-cmds    {background:radial-gradient(ellipse at 40% 60%,#0e1820 0%,#0a0c14 70%)}
+.slide-end     {background:radial-gradient(ellipse at 50% 50%,#1a1d2e 0%,#0a0c14 70%)}
+
+/* ── LIVE ACTION BANNER ── */
+.live-action{
+  position:absolute;bottom:90px;left:50%;transform:translateX(-50%);
+  background:#0a1f0a;border:1.5px solid #166534;border-radius:12px;
+  padding:12px 24px;display:flex;align-items:center;gap:14px;
+  white-space:nowrap;z-index:10;
+}
+.live-dot{
+  width:10px;height:10px;border-radius:50%;background:#86efac;flex-shrink:0;
+  animation:pulse 1.2s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.8)}}
+.live-label{font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#86efac}
+.live-cmd{font-family:'Cascadia Code','Fira Code',monospace;font-size:14px;color:#e2e8f0;background:#0d0f1a;padding:4px 12px;border-radius:6px;border:1px solid #2d3150}
+.live-open{font-size:13px;color:#60a5fa}
+
+/* ── PRESENTER Q&A STYLES ── */
+.slide-qa {
+  justify-content: flex-start !important;
+  overflow-y: auto !important;
+  padding-top: 40px !important;
+  padding-bottom: 120px !important;
+  text-align: left !important;
+  align-items: center !important;
+  background: radial-gradient(ellipse at 50% 30%,#181020 0%,#0a0c14 70%) !important;
+}
+.qa-badge {
+  background: #7c2d12;
+  color: #fdba74;
+  border: 1px solid #ea580c;
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  display: inline-block;
+}
+.qa-card {
+  background: #1a1d2e;
+  border: 1px solid #2d3150;
+  border-radius: 12px;
+  padding: 18px 24px;
+  width: 100%;
+  max-width: 800px;
+  margin-bottom: 14px;
+}
+</style>
+</head>
+<body>
+
+<div class="progress" id="progress"></div>
+
+<div class="dots" id="dots"></div>
+
+<div class="slides" id="slides">
+
+  <!-- ══════════════════════════════ SLIDE 1 — TITLE ══════════════════════════════ -->
+  <div class="slide slide-title active">
+    <div class="label">Docker Workshop</div>
+    <h1>What is<br><span style="color:#7c85ff">Docker</span> &amp;<br>Why You Need It</h1>
+    <p class="sub">A live walkthrough — from concept to a running full-stack application.<br>For developers who know code but are new to containers.</p>
+    <div style="margin-top:36px;font-size:13px;color:#3d4470">Press → or click Next to begin</div>
+  </div>
+
+  <!-- ══════════════════════════════ SLIDE 2 — THE PROBLEM ══════════════════════════════ -->
+  <div class="slide slide-problem">
+    <div class="label">The Problem</div>
+    <h2>"It works on<br>my machine." 😤</h2>
+    <p class="sub">You build something. It works. Your colleague runs it — it breaks.<br>Different <strong>Node versions</strong>, different <strong>OS</strong>, different <strong>config</strong>. Every time.</p>
+    <div class="two-col" style="max-width:640px;margin-top:28px">
+      <div style="background:#1f0e0e;border:1px solid #7f1d1d;border-radius:12px;padding:20px">
+        <div style="font-size:11px;font-weight:800;letter-spacing:2px;color:#ef4444;margin-bottom:12px">❌ WITHOUT DOCKER</div>
+        <div style="font-size:14px;color:#94a3b8;line-height:2">
+          Dev → Node 16<br>
+          Colleague → Node 20<br>
+          Server → Node 18<br>
+          <span style="color:#ef4444">App breaks everywhere differently</span>
+        </div>
+      </div>
+      <div style="background:#0e1f0e;border:1px solid #166534;border-radius:12px;padding:20px">
+        <div style="font-size:11px;font-weight:800;letter-spacing:2px;color:#86efac;margin-bottom:12px">✅ WITH DOCKER</div>
+        <div style="font-size:14px;color:#94a3b8;line-height:2">
+          Dev → same box<br>
+          Colleague → same box<br>
+          Server → same box<br>
+          <span style="color:#86efac">Works the same. Everywhere. Always.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════ SLIDE 3 — THE BIG IDEA ══════════════════════════════ -->
+  <div class="slide slide-terms">
+    <div class="label">The Big Idea</div>
+    <h2>Instead of sending code —<br>send the <span style="color:#7c85ff">entire box.</span></h2>
+    <div class="analogy-box">
+      <div class="a-row">
+        <div class="a-item">
+          <div class="a-icon">📄</div>
+          <div class="a-top">You Write</div>
+          <div class="a-label">Dockerfile</div>
+          <div class="a-sub">The recipe</div>
+        </div>
+        <div class="a-arr">→</div>
+        <div class="a-item">
+          <div class="a-icon">📦</div>
+          <div class="a-top">Docker Builds</div>
+          <div class="a-label">Image</div>
+          <div class="a-sub">The sealed box</div>
+        </div>
+        <div class="a-arr">→</div>
+        <div class="a-item">
+          <div class="a-icon">🚚</div>
+          <div class="a-top">You Share</div>
+          <div class="a-label">Registry</div>
+          <div class="a-sub">The delivery truck</div>
+        </div>
+        <div class="a-arr">→</div>
+        <div class="a-item">
+          <div class="a-icon">🎁</div>
+          <div class="a-top">They Run</div>
+          <div class="a-label">Container</div>
+          <div class="a-sub">The open box</div>
+        </div>
+        <div class="a-arr">→</div>
+        <div class="a-item">
+          <div class="a-icon">🏠</div>
+          <div class="a-top">Everyone Sees</div>
+          <div class="a-label">Running App</div>
+          <div class="a-sub">The end product</div>
+        </div>
+      </div>
+    </div>
+    <p class="sub" style="margin-top:20px">This is the <strong>entire Docker workflow</strong>. Every step in this session follows this chain.</p>
+  </div>
+
+  <!-- ══════════════════════════════ SLIDE 4 — 3 KEY WORDS ══════════════════════════════ -->
+  <div class="slide slide-terms">
+    <div class="label">3 Words — That's All</div>
+    <h2>Before we type anything,<br>know just <span style="color:#7c85ff">3 words.</span></h2>
+    <div class="cards">
+      <div class="card">
+        <div class="icon">📄</div>
+        <h3>Dockerfile</h3>
+        <p>Your recipe. Plain text file. You write it once. It tells Docker exactly how to build your app's box.</p>
+      </div>
+      <div class="card">
+        <div class="icon">📦</div>
+        <h3>Image</h3>
+        <p>The sealed box. Built from the Dockerfile. Read-only. You can share it. You can run it anywhere.</p>
+      </div>
+      <div class="card">
+        <div class="icon">🏃</div>
+        <h3>Container</h3>
+        <p>The box, open and running. Like pressing Play on an Image. One image → run 10 identical containers.</p>
+      </div>
+    </div>
+    <div class="hl" style="margin-top:28px;text-align:center">
+      🍪 The <strong>cookie cutter</strong> is your Image. The <strong>cookie</strong> it produces is your Container. One cutter — unlimited identical cookies. (Same Containers always)
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════ SLIDE 5 — THE RECIPE ══════════════════════════════ -->
+  <div class="slide slide-recipe">
+    <div class="label">Step 1 — The Recipe</div>
+    <h2>📄 Writing the Dockerfile<br><span style="color:#7c85ff;font-size:28px">Telling Docker how to build your box</span></h2>
+    <div class="code-block">
+      <span class="cc"># What base do we start from?</span><br>
+      <span class="ck">FROM</span> <span class="cv">node:20-alpine</span><br><br>
+      <span class="cc"># Where inside the box do we work?</span><br>
+      <span class="ck">WORKDIR</span> <span class="cv">/app</span><br><br>
+      <span class="cc"># Copy the shopping list (package.json) first</span><br>
+      <span class="ck">COPY</span> <span class="cv">package*.json ./</span><br><br>
+      <span class="cc"># Buy everything on the shopping list</span><br>
+      <span class="ck">RUN</span> <span class="cv">npm install</span><br><br>
+      <span class="cc"># Now pack everything else into the box</span><br>
+      <span class="ck">COPY</span> <span class="cv">. .</span><br><br>
+      <span class="cc"># Which door does the box open on?</span><br>
+      <span class="ck">EXPOSE</span> <span class="cp">4000</span><br><br>
+      <span class="cc"># When someone opens the box, what starts?</span><br>
+      <span class="ck">CMD</span> <span class="cv">["node", "src/server.js"]</span>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════ SLIDE 6 — PACKING THE BOX ══════════════════════════════ -->
+  <div class="slide slide-pack">
+    <div class="label">Step 2 — Pack the Box</div>
+    <h2>📦 Building the Image<br><span style="color:#86efac;font-size:26px">docker build = sealing the box</span></h2>
+    <p class="sub">Docker reads your Dockerfile top to bottom and creates a sealed, portable image. Each instruction adds a <strong>layer</strong> — like packing one item at a time.</p>
+    <div style="margin-top:28px;max-width:580px;width:100%">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="background:#1a1d2e;border:1px solid #2d3150;border-radius:8px;padding:12px 18px;display:flex;align-items:center;gap:12px">
+          <span style="font-size:20px">🧱</span><span style="color:#7c85ff;font-size:13px;font-weight:700;width:80px">Layer 1</span><span style="color:#94a3b8;font-size:13px">Base OS — node:20-alpine (the foundation)</span>
+        </div>
+        <div style="background:#1a1d2e;border:1px solid #2d3150;border-radius:8px;padding:12px 18px;display:flex;align-items:center;gap:12px">
+          <span style="font-size:20px">🧱</span><span style="color:#7c85ff;font-size:13px;font-weight:700;width:80px">Layer 2</span><span style="color:#94a3b8;font-size:13px">Working directory set inside the box</span>
+        </div>
+        <div style="background:#1a1d2e;border:1px solid #2d3150;border-radius:8px;padding:12px 18px;display:flex;align-items:center;gap:12px">
+          <span style="font-size:20px">🧱</span><span style="color:#7c85ff;font-size:13px;font-weight:700;width:80px">Layer 3</span><span style="color:#94a3b8;font-size:13px">npm install — all packages installed</span>
+        </div>
+        <div style="background:#1a1d2e;border:1px solid #2d3150;border-radius:8px;padding:12px 18px;display:flex;align-items:center;gap:12px">
+          <span style="font-size:20px">🧱</span><span style="color:#7c85ff;font-size:13px;font-weight:700;width:80px">Layer 4</span><span style="color:#94a3b8;font-size:13px">Your source code — packed inside</span>
+        </div>
+        <div style="background:#0e1f0e;border:1px solid #166534;border-radius:8px;padding:14px 18px;display:flex;align-items:center;gap:12px;margin-top:4px">
+          <span style="font-size:20px">📦</span><span style="color:#86efac;font-size:14px;font-weight:700">Final Image — sealed, ready, portable</span>
+        </div>
+      </div>
+    </div>
+    <div class="hl">⚡ Layers are <strong>cached</strong>. If your code changes, only the last layer rebuilds. The rest reuse the cache. Builds are fast.</div>
+  </div>
+
+  <!-- ══════════════════════════════ SLIDE 7 — WHERE DO IMAGES COME FROM ══════════════════════════════ -->
+  <div class="slide slide-image">
+    <div class="label">Docker Hub — The App Store</div>
+    <h2>You don't always build.<br>Sometimes you just <span style="color:#7c85ff">download.</span></h2>
+    <p class="sub"><strong>Docker Hub</strong> is like an app store for server software. Thousands of pre-built images — ready to pull and run. No installation. No setup.</p>
+    <div class="cards" style="margin-top:24px">
+      <div class="card" style="text-align:center;max-width:150px">
+        <div class="icon">🐘</div>
+        <h3>postgres</h3>
+        <p>Full database, ready instantly</p>
+      </div>
+      <div class="card" style="text-align:center;max-width:150px">
+        <div class="icon">⚡</div>
+        <h3>redis</h3>
+        <p>Cache server, one pull away</p>
+      </div>
+      <div class="card" style="text-align:center;max-width:150px">
+        <div class="icon">⚙️</div>
+        <h3>nginx</h3>
+        <p>Web server, no install needed</p>
+      </div>
+      <div class="card" style="text-align:center;max-width:150px">
+        <div class="icon">🐍</div>
+        <h3>python</h3>
+        <p>Any version, any variant</p>
+      </div>
+    </div>
+    <div class="cmd-pill" style="margin-top:28px;font-size:14px">docker pull nginx</div>
+    <p style="color:#64748b;font-size:14px;margin-top:10px">One command. An entire web server downloaded and ready.</p>
+    <div class="live-action">
+      <div class="live-dot"></div>
+      <span class="live-label">Terminal Now</span>
+      <span class="live-cmd">docker pull nginx</span>
+      <span class="live-open">→ watch layers download</span>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════ SLIDE 8 — SHARING / REGISTRY ══════════════════════════════ -->
+  <div class="slide slide-share">
+    <div class="label">Step 3 — Share the Box</div>
+    <h2>🚚 Pushing to a Registry<br><span style="color:#7c85ff;font-size:26px">Like GitHub — but for images</span></h2>
+    <p class="sub">Once your image is built, you push it to a <strong>registry</strong>. Your team, your server, your CI/CD — they all pull it from there. Same image. Always.</p>
+    <div style="margin-top:28px;max-width:640px;width:100%">
+      <div style="display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:wrap">
+        <div style="background:#1a1d2e;border:1px solid #2d3150;border-radius:12px;padding:18px 22px;text-align:center">
+          <div style="font-size:32px">💻</div>
+          <div style="font-size:13px;color:#7c85ff;font-weight:700;margin-top:6px">Your Machine</div>
+          <div style="font-size:12px;color:#64748b">docker build + push</div>
+        </div>
+        <div style="font-size:28px;color:#3d4470;margin:0 12px">→</div>
+        <div style="background:#1a1d2e;border:1px solid #7c85ff;border-radius:12px;padding:18px 22px;text-align:center">
+          <div style="font-size:32px">🏪</div>
+          <div style="font-size:13px;color:#7c85ff;font-weight:700;margin-top:6px">Registry</div>
+          <div style="font-size:12px;color:#64748b">Docker Hub / GitHub / AWS</div>
+        </div>
+        <div style="font-size:28px;color:#3d4470;margin:0 12px">→</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="background:#1a1d2e;border:1px solid #2d3150;border-radius:10px;padding:12px 18px;text-align:center">
+            <div style="font-size:13px;color:#86efac;font-weight:700">🧑‍💻 Colleague</div>
+            <div style="font-size:11px;color:#64748b">docker pull + run</div>
+          </div>
+          <div style="background:#1a1d2e;border:1px solid #2d3150;border-radius:10px;padding:12px 18px;text-align:center">
+            <div style="font-size:13px;color:#86efac;font-weight:700">🖥️ Server</div>
+            <div style="font-size:11px;color:#64748b">docker pull + run</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="hl" style="margin-top:24px">Everyone gets the <strong>exact same image</strong>. Not a copy of your code. Not a script. The actual sealed box — identical every time.</div>
+  </div>
+
+  <!-- ══════════════════════════════ SLIDE 9 — RUNNING / UNBOXING ══════════════════════════════ -->
+  <div class="slide slide-run">
+    <div class="label">Step 4 — Unpack It</div>
+    <h2>🎁 Running a Container<br><span style="color:#86efac;font-size:26px">docker run = opening the box</span></h2>
+    <p class="sub">When someone runs the image, Docker creates a <strong>container</strong> — the image comes alive. Isolated. Fast. Disposable.</p>
+    <div class="cmd-pill" style="font-size:18px;margin-top:24px">docker run -d -p 8080:80 nginx</div>
+    <div style="margin-top:24px;max-width:560px;width:100%;text-align:left">
+      <div style="display:flex;flex-direction:column;gap:10px;font-size:14px">
+        <div style="background:#1a1d2e;border-radius:8px;padding:12px 16px;display:flex;gap:16px">
+          <span style="color:#fbbf24;font-family:monospace;min-width:70px">-d</span>
+          <span style="color:#94a3b8">Run in background (detached — no logs flooding your terminal)</span>
+        </div>
+        <div style="background:#1a1d2e;border-radius:8px;padding:12px 16px;display:flex;gap:16px">
+          <span style="color:#fbbf24;font-family:monospace;min-width:70px">-p 8080:80</span>
+          <span style="color:#94a3b8">Map YOUR port 8080 → container's port 80 (so your browser can reach it)</span>
+        </div>
+        <div style="background:#1a1d2e;border-radius:8px;padding:12px 16px;display:flex;gap:16px">
+          <span style="color:#fbbf24;font-family:monospace;min-width:70px">nginx</span>
+          <span style="color:#94a3b8">Which image to run (pulls from Docker Hub if not local)</span>
+        </div>
+      </div>
+    </div>
+    <div class="hl" style="margin-top:20px">Then open <strong>http://localhost:8080</strong> — Nginx web server, running inside a box, reachable in your browser. Took 5 seconds.</div>
+    <div class="live-action">
+      <div class="live-dot"></div>
+      <span class="live-label">Terminal Now</span>
+      <span class="live-cmd">docker run -d -p 8080:80 --name demo-nginx nginx</span>
+      <span class="live-open">→ open localhost:8080</span>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════ SLIDE 10 — DOCKER COMPOSE ══════════════════════════════ -->
+  <div class="slide slide-compose">
+    <div class="label">Step 5 — Multiple Boxes Together</div>
+    <h2>📋 docker-compose.yml<br><span style="color:#fbbf24;font-size:26px">One file. All your boxes. One command.</span></h2>
+    <p class="sub">Real apps need a database, a cache, a server, a frontend. docker-compose.yml describes all of them — and starts them all together.</p>
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:28px">
+      <div style="background:#1a1d2e;border:1px solid #2d3150;border-radius:12px;padding:16px 20px;text-align:center">
+        <div style="font-size:28px">🐘</div>
+        <div style="font-size:13px;font-weight:700;color:#60a5fa;margin-top:4px">postgres</div>
+        <div style="font-size:11px;color:#64748b">Database</div>
+      </div>
+      <div style="background:#1a1d2e;border:1px solid #2d3150;border-radius:12px;padding:16px 20px;text-align:center">
+        <div style="font-size:28px">⚡</div>
+        <div style="font-size:13px;font-weight:700;color:#ef4444;margin-top:4px">redis</div>
+        <div style="font-size:11px;color:#64748b">Cache</div>
+      </div>
+      <div style="background:#1a1d2e;border:1px solid #2d3150;border-radius:12px;padding:16px 20px;text-align:center">
+        <div style="font-size:28px">🟢</div>
+        <div style="font-size:13px;font-weight:700;color:#fbbf24;margin-top:4px">api</div>
+        <div style="font-size:11px;color:#64748b">Backend</div>
+      </div>
+      <div style="background:#1a1d2e;border:1px solid #2d3150;border-radius:12px;padding:16px 20px;text-align:center">
+        <div style="font-size:28px">⚛️</div>
+        <div style="font-size:13px;font-weight:700;color:#f472b6;margin-top:4px">frontend</div>
+        <div style="font-size:11px;color:#64748b">React App</div>
+      </div>
+      <div style="background:#1a1d2e;border:1px solid #2d3150;border-radius:12px;padding:16px 20px;text-align:center">
+        <div style="font-size:28px">⚙️</div>
+        <div style="font-size:13px;font-weight:700;color:#94a3b8;margin-top:4px">nginx</div>
+        <div style="font-size:11px;color:#64748b">Proxy</div>
+      </div>
+      <div style="background:#1a1d2e;border:1px solid #2d3150;border-radius:12px;padding:16px 20px;text-align:center">
+        <div style="font-size:28px">📬</div>
+        <div style="font-size:13px;font-weight:700;color:#a78bfa;margin-top:4px">mailhog</div>
+        <div style="font-size:11px;color:#64748b">Email</div>
+      </div>
+    </div>
+    <div style="margin-top:28px;display:flex;gap:12px;flex-wrap:wrap;justify-content:center">
+      <div class="cmd-pill">docker compose up --build</div>
+      <div class="cmd-pill" style="border-color:#7f1d1d;color:#f87171">docker compose down</div>
+    </div>
+    <p style="color:#64748b;font-size:13px;margin-top:10px">That's it. Two commands for the whole stack.</p>
+    <div class="live-action">
+      <div class="live-dot"></div>
+      <span class="live-label">Terminal Now</span>
+      <span class="live-cmd">docker compose up --build</span>
+      <span class="live-open">→ watch all 6 start in Docker Desktop</span>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════ SLIDE — PORT MAPPING ══════════════════════════════ -->
+  <div class="slide slide-share">
+    <div class="label">How They Talk</div>
+    <h2>Port Mapping &amp;<br><span style="color:#7c85ff">Container Communication</span></h2>
+    <p class="sub">Two rules. Know these and networking in Docker makes complete sense.</p>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:780px;width:100%;margin-top:24px;text-align:left">
+
+      <!-- Rule 1 -->
+      <div style="background:#1a1d2e;border:1px solid #3d4470;border-radius:14px;padding:20px 22px">
+        <div style="font-size:11px;font-weight:800;letter-spacing:2px;color:#7c85ff;margin-bottom:12px">RULE 1 — HOST → CONTAINER</div>
+        <div style="font-size:15px;font-weight:700;color:#e2e8f0;margin-bottom:10px">Port Mapping</div>
+        <p style="font-size:13px;color:#64748b;margin-bottom:14px">Your browser can't go inside Docker. So you open a door — map a host port to a container port.</p>
+        <div style="background:#0d0f1a;border-radius:8px;padding:14px 16px;font-size:13px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+            <span style="color:#94a3b8">🧑 Browser</span>
+            <span style="color:#f472b6;font-family:monospace">localhost:3000</span>
+            <span style="color:#475569">→</span>
+            <span style="color:#86efac;font-family:monospace">container:3000</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+            <span style="color:#94a3b8">🧑 Browser</span>
+            <span style="color:#f472b6;font-family:monospace">localhost:4000</span>
+            <span style="color:#475569">→</span>
+            <span style="color:#86efac;font-family:monospace">container:4000</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="color:#94a3b8">🔧 DBeaver</span>
+            <span style="color:#f472b6;font-family:monospace">localhost:5432</span>
+            <span style="color:#475569">→</span>
+            <span style="color:#86efac;font-family:monospace">postgres:5432</span>
+          </div>
+        </div>
+        <div style="margin-top:12px;font-size:12px;color:#475569">Format: <span style="color:#fbbf24;font-family:monospace">"HOST:CONTAINER"</span> in docker-compose.yml</div>
+      </div>
+
+      <!-- Rule 2 -->
+      <div style="background:#1a1d2e;border:1px solid #3d4470;border-radius:14px;padding:20px 22px">
+        <div style="font-size:11px;font-weight:800;letter-spacing:2px;color:#86efac;margin-bottom:12px">RULE 2 — CONTAINER → CONTAINER</div>
+        <div style="font-size:15px;font-weight:700;color:#e2e8f0;margin-bottom:10px">Service Names as Hostnames</div>
+        <p style="font-size:13px;color:#64748b;margin-bottom:14px">Inside Docker's network, containers find each other using the <strong style="color:#e2e8f0">service name</strong> — not localhost.</p>
+        <div style="background:#0d0f1a;border-radius:8px;padding:14px 16px;font-size:13px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <span style="color:#fbbf24">api</span>
+            <span style="color:#475569">→ connects to →</span>
+            <span style="color:#60a5fa;font-family:monospace">postgres:5432</span>
+            <span style="color:#86efac">✅</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <span style="color:#fbbf24">api</span>
+            <span style="color:#475569">→ connects to →</span>
+            <span style="color:#ef4444;font-family:monospace">localhost:5432</span>
+            <span style="color:#ef4444">❌</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="color:#f472b6">frontend</span>
+            <span style="color:#475569">→ connects to →</span>
+            <span style="color:#fbbf24;font-family:monospace">api:4000</span>
+            <span style="color:#86efac">✅</span>
+          </div>
+        </div>
+        <div style="margin-top:12px;font-size:12px;color:#475569"><span style="color:#ef4444">localhost</span> inside a container = that container itself, not another container</div>
+      </div>
+    </div>
+
+    <!-- Mini flow diagram -->
+    <div style="margin-top:20px;background:#0d0f1a;border:1px solid #2d3150;border-radius:12px;padding:14px 24px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;font-size:13px;max-width:680px">
+      <span style="color:#94a3b8">🧑 Browser</span>
+      <span style="color:#f472b6;font-family:monospace">:80</span>
+      <span style="color:#3d4470">──▶</span>
+      <span style="color:#94a3b8">nginx</span>
+      <span style="color:#3d4470">──▶</span>
+      <span style="color:#fbbf24">api:4000</span>
+      <span style="color:#3d4470">──▶</span>
+      <span style="color:#60a5fa">postgres:5432</span>
+      <span style="color:#475569">&amp;</span>
+      <span style="color:#ef4444">redis:6379</span>
+      <span style="color:#64748b;font-size:11px;width:100%;text-align:center;margin-top:4px">Each arrow uses the service name — Docker resolves it automatically inside the network</span>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════ SLIDE 11 — PORTS / END PRODUCT ══════════════════════════════ -->
+  <div class="slide slide-ports">
+    <div class="label">Step 6 — The End Product</div>
+    <h2>🏠 Open Your Browser<br><span style="color:#7c85ff;font-size:26px">See what's running</span></h2>
+    <p class="sub">After <code style="color:#86efac">docker compose up --build</code>, open these URLs:</p>
+    <div style="margin-top:20px;width:100%;max-width:560px">
+      <div class="port-row">
+        <div class="port-num">:3000</div>
+        <div class="port-desc">TaskFlow React App — the UI</div>
+        <span class="port-badge pb-web">🌐 Browser</span>
+      </div>
+      <div class="port-row">
+        <div class="port-num">:80</div>
+        <div class="port-desc">Nginx — routes to the app via proxy</div>
+        <span class="port-badge pb-web">🌐 Browser</span>
+      </div>
+      <div class="port-row">
+        <div class="port-num">:4000</div>
+        <div class="port-desc">/api/tasks — raw JSON from the database</div>
+        <span class="port-badge pb-web">🌐 Browser</span>
+      </div>
+      <div class="port-row">
+        <div class="port-num">:8025</div>
+        <div class="port-desc">Mailhog — see all emails your app sends</div>
+        <span class="port-badge pb-web">🌐 Browser</span>
+      </div>
+      <div class="port-row">
+        <div class="port-num">:5432</div>
+        <div class="port-desc">PostgreSQL — database protocol only</div>
+        <span class="port-badge pb-tool">🔧 DBeaver / TablePlus</span>
+      </div>
+      <div class="port-row">
+        <div class="port-num">:6379</div>
+        <div class="port-desc">Redis — cache protocol only</div>
+        <span class="port-badge pb-tool">🔧 RedisInsight</span>
+      </div>
+    </div>
+    <div class="live-action">
+      <div class="live-dot"></div>
+      <span class="live-label">Browser Now</span>
+      <span class="live-cmd">localhost:3000</span>
+      <span class="live-open">→ then :4000/api/tasks → then :8025</span>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════ SLIDE 12 — COMMANDS ══════════════════════════════ -->
+  <div class="slide slide-cmds">
+    <div class="label">Daily Commands</div>
+    <h2>Everything You'll<br>Actually <span style="color:#7c85ff">Type</span></h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:680px;width:100%;margin-top:24px;text-align:left">
+      <div style="background:#0d0f1a;border:1px solid #166534;border-radius:10px;padding:14px 18px">
+        <code style="color:#86efac;font-size:13px">docker compose up --build</code>
+        <p style="color:#64748b;font-size:13px;margin-top:6px">Start everything. Rebuild images first.</p>
+      </div>
+      <div style="background:#0d0f1a;border:1px solid #7f1d1d;border-radius:10px;padding:14px 18px">
+        <code style="color:#f87171;font-size:13px">docker compose down</code>
+        <p style="color:#64748b;font-size:13px;margin-top:6px">Stop everything. Data is kept.</p>
+      </div>
+      <div style="background:#0d0f1a;border:1px solid #2d3150;border-radius:10px;padding:14px 18px">
+        <code style="color:#86efac;font-size:13px">docker compose up</code>
+        <p style="color:#64748b;font-size:13px;margin-top:6px">Start everything. Use cached images.</p>
+      </div>
+      <div style="background:#0d0f1a;border:1px solid #2d3150;border-radius:10px;padding:14px 18px">
+        <code style="color:#86efac;font-size:13px">docker compose down -v</code>
+        <p style="color:#64748b;font-size:13px;margin-top:6px">Stop + delete all data. Fresh start.</p>
+      </div>
+      <div style="background:#0d0f1a;border:1px solid #2d3150;border-radius:10px;padding:14px 18px">
+        <code style="color:#86efac;font-size:13px">docker ps</code>
+        <p style="color:#64748b;font-size:13px;margin-top:6px">List all running containers.</p>
+      </div>
+      <div style="background:#0d0f1a;border:1px solid #2d3150;border-radius:10px;padding:14px 18px">
+        <code style="color:#86efac;font-size:13px">docker compose logs -f api</code>
+        <p style="color:#64748b;font-size:13px;margin-top:6px">See live logs for one service.</p>
+      </div>
+    </div>
+    <div class="hl" style="margin-top:20px;text-align:center">
+      You'll use <strong>docker compose up --build</strong> and <strong>docker compose down</strong> 90% of the time.
+    </div>
+    <div class="live-action">
+      <div class="live-dot"></div>
+      <span class="live-label">Terminal Now</span>
+      <span class="live-cmd">docker compose down</span>
+      <span class="live-open">→ watch all containers stop in Docker Desktop</span>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════ SLIDE 13 — END ══════════════════════════════ -->
+  <div class="slide slide-end">
+    <div class="big">🐳</div>
+    <h2>You now understand<br><span style="color:#7c85ff">Docker end to end.</span></h2>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:28px">
+      <div style="background:#1a1d2e;border:1px solid #2d3150;border-radius:8px;padding:8px 14px;font-size:13px;color:#94a3b8">📄 Dockerfile — recipe</div>
+      <div style="color:#475569">→</div>
+      <div style="background:#1a1d2e;border:1px solid #2d3150;border-radius:8px;padding:8px 14px;font-size:13px;color:#94a3b8">📦 Image — packed box</div>
+      <div style="color:#475569">→</div>
+      <div style="background:#1a1d2e;border:1px solid #2d3150;border-radius:8px;padding:8px 14px;font-size:13px;color:#94a3b8">🚚 Registry — shipping</div>
+      <div style="color:#475569">→</div>
+      <div style="background:#1a1d2e;border:1px solid #2d3150;border-radius:8px;padding:8px 14px;font-size:13px;color:#94a3b8">🎁 Container — running</div>
+      <div style="color:#475569">→</div>
+      <div style="background:#0e1f0e;border:1px solid #166534;border-radius:8px;padding:8px 14px;font-size:13px;color:#86efac">🏠 App — live!</div>
+    </div>
+    <p class="sub" style="margin-top:28px">New developer joins → clones repo → <code style="color:#86efac">docker compose up --build</code> → everything runs. <strong>No setup docs. No version mismatches. No surprises.</strong></p>
+  </div>
+
+  <!-- ══════════════════════════════ PRESENTER SECRET Q&A: 1. GIT VS DOCKER ══════════════════════════════ -->
+  <div class="slide slide-qa">
+    <div class="qa-badge">🔒 Presenter Notes / Private Q&A</div>
+    <h2 style="font-size:26px;margin-bottom:8px">1. If Git exists, why do we need Docker?</h2>
+    <p class="sub" style="font-size:14px;margin-bottom:18px">When a colleague asks: <em>"Why can't we just push and pull code with Git?"</em></p>
+
+    <div class="two-col" style="max-width:800px;margin-top:0">
+      <div style="background:#1f0e0e;border:1px solid #7f1d1d;border-radius:12px;padding:16px">
+        <div style="font-size:11px;font-weight:800;letter-spacing:2px;color:#ef4444;margin-bottom:8px">WHAT GIT DOES</div>
+        <p style="font-size:13px;color:#cbd5e1;line-height:1.7;margin:0">
+          ✔ Tracks text code files (.js, .py, .html)<br>
+          ✔ Tracks commit history & branches<br>
+          <span style="color:#ef4444">❌ DOES NOT track the operating system</span><br>
+          <span style="color:#ef4444">❌ DOES NOT install PostgreSQL, Redis, or Nginx</span><br>
+          <span style="color:#ef4444">❌ DOES NOT manage Node/Python runtime versions</span><br>
+          <span style="color:#ef4444">❌ DOES NOT prevent Windows vs Linux compile errors</span>
+        </p>
+      </div>
+
+      <div style="background:#0e1f0e;border:1px solid #166534;border-radius:12px;padding:16px">
+        <div style="font-size:11px;font-weight:800;letter-spacing:2px;color:#86efac;margin-bottom:8px">WHAT DOCKER PACKS</div>
+        <p style="font-size:13px;color:#cbd5e1;line-height:1.7;margin:0">
+          ✔ The exact OS (e.g. Alpine Linux)<br>
+          ✔ The exact runtime (e.g. Node 20.10.0, Python 3.11)<br>
+          ✔ The exact database binaries (Postgres 16, Redis 7)<br>
+          ✔ All system libraries (OpenSSL, glibc)<br>
+          <span style="color:#86efac">✔ Your code bundled and tested inside it</span>
+        </p>
+      </div>
+    </div>
+
+    <div class="qa-card" style="margin-top:16px">
+      <div style="font-size:12px;font-weight:800;color:#fbbf24;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">💥 The Real-World Failure Scenario with Git alone</div>
+      <p style="font-size:13px;color:#94a3b8;line-height:1.6;margin:0">
+        You write code on <strong>Windows 11</strong> with Node 20. A package uses a native C++ module (e.g., <code>bcrypt</code> or <code>sharp</code>). When you run <code>npm install</code>, your Windows compiler creates a <strong>.dll / Windows binary</strong>. Your colleague is on <strong>Ubuntu</strong> or <strong>macOS</strong>. They run <code>git pull</code>. Git pulls the code, but the app crashes because Windows binaries don't run on Linux, their Node is Node 18, and PostgreSQL isn't installed. They spend 3 hours setting up what Docker solves in 60 seconds.
+      </p>
+    </div>
+
+    <div class="hl" style="margin-top:10px;font-size:13.5px">
+      🏗️ <strong>The Analogy:</strong> <strong>Git</strong> is the <em>architect's blueprint on paper</em>. Handing someone the blueprint means they still have to find bricks, hire plumbers, and hope water pressure matches. <strong>Docker</strong> is the <em>pre-fabricated shipping container room</em> with plumbing and electricity pre-installed.
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════ PRESENTER SECRET Q&A: 2. OPTION A VS OPTION B ══════════════════════════════ -->
+  <div class="slide slide-qa">
+    <div class="qa-badge">🔒 Presenter Notes / Private Q&A</div>
+    <h2 style="font-size:26px;margin-bottom:8px">2. Architectural Choice: Option A vs Option B</h2>
+    <p class="sub" style="font-size:14px;margin-bottom:18px">How to answer: <em>"Should we host it on one server or install on every computer?"</em></p>
+
+    <div class="qa-card" style="margin-top:0">
+      <table style="width:100%;border-collapse:collapse;font-size:13px;line-height:1.7">
+        <tr style="border-bottom:1px solid #2d3150">
+          <th style="text-align:left;color:#7c85ff;padding:8px 10px">Model</th>
+          <th style="text-align:left;color:#7c85ff;padding:8px 10px">Where Docker Runs</th>
+          <th style="text-align:left;color:#7c85ff;padding:8px 10px">What Team Needs</th>
+          <th style="text-align:left;color:#7c85ff;padding:8px 10px">Best Used For</th>
+        </tr>
+        <tr style="border-bottom:1px solid #1e2235">
+          <td style="padding:10px;font-weight:700;color:#f472b6">Option A<br><span style="font-size:11px;color:#64748b;font-weight:normal">Central Server / Office Box</span></td>
+          <td style="padding:10px;color:#cbd5e1">On <strong>ONE</strong> machine (e.g. your PC or office server)</td>
+          <td style="padding:10px;color:#cbd5e1">Just a <strong>Web Browser</strong></td>
+          <td style="padding:10px;color:#86efac"><strong>Demoing, Staging, QA, Clients</strong>.<br>Colleagues open <code>http://IP:80</code>. They don't install Docker or touch code.</td>
+        </tr>
+        <tr>
+          <td style="padding:10px;font-weight:700;color:#60a5fa">Option B<br><span style="font-size:11px;color:#64748b;font-weight:normal">Cross-Dev on every laptop</span></td>
+          <td style="padding:10px;color:#cbd5e1">On <strong>EACH</strong> developer's computer</td>
+          <td style="padding:10px;color:#cbd5e1">Git + Docker Desktop</td>
+          <td style="padding:10px;color:#86efac"><strong>Active Development</strong>.<br>Developers edit files locally; bind mount reflects changes instantly.</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="hl" style="margin-top:12px;font-size:14px">
+      🎯 <strong>The Practical Verdict:</strong><br>
+      • Use <strong>Option B</strong> for developers who write code and need their own isolated testing sandbox.<br>
+      • Use <strong>Option A</strong> when presenting or giving colleagues a live demo without setup overhead.
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════ PRESENTER SECRET Q&A: 3. 2015-STYLE MANUAL PLAN ══════════════════════════════ -->
+  <div class="slide slide-qa">
+    <div class="qa-badge">🔒 Presenter Notes / Private Q&A</div>
+    <h2 style="font-size:26px;margin-bottom:8px">3. The 2015-Style Manual Execution Plan</h2>
+    <p class="sub" style="font-size:14px;margin-bottom:16px">Senior systems engineer checklist — zero magic, verified end-to-end:</p>
+
+    <div class="qa-card" style="margin-top:0">
+      <div style="font-size:13px;line-height:1.85;color:#cbd5e1">
+        <strong style="color:#7c85ff">Step 1 — Verify Local Ports:</strong> Before running, confirm no local software (local Postgres, IIS, Apache) is hogging ports 80, 3000, 4000, or 5432.<br>
+        <strong style="color:#7c85ff">Step 2 — The 4 Core Files:</strong><br>
+        &nbsp;&nbsp;① <code>backend/Dockerfile</code> — multi-stage (base, dev, prod).<br>
+        &nbsp;&nbsp;② <code>frontend/Dockerfile</code> — Vite dev / Nginx prod.<br>
+        &nbsp;&nbsp;③ <code>scripts/init.sql</code> — auto-seeds database on first launch.<br>
+        &nbsp;&nbsp;④ Root <code>docker-compose.yml</code> — links all 4 services together on <code>app-network</code>.<br>
+        <strong style="color:#7c85ff">Step 3 — Start the Stack:</strong> <code>docker compose up --build</code>.<br>
+        <strong style="color:#7c85ff">Step 4 — Validate Every Link in the Chain:</strong><br>
+        &nbsp;&nbsp;• <em>Database link:</em> Look for <code>✅ PostgreSQL connected</code> & <code>✅ Redis connected</code> in API logs.<br>
+        &nbsp;&nbsp;• <em>Backend Direct:</em> Visit <code>http://localhost:4000/api/tasks</code> (returns live DB JSON).<br>
+        &nbsp;&nbsp;• <em>Reverse Proxy / UI:</em> Visit <code>http://localhost:3000</code> or <code>http://localhost:80</code> (React UI fetches from API).<br>
+        <strong style="color:#7c85ff">Step 5 — Sharing with a Colleague:</strong> Colleague runs <code>git clone</code>, copies <code>.env.example</code> to <code>.env</code>, and runs <code>docker compose up --build</code>. Exactly 60 seconds later, everything runs identically on their machine.
+      </div>
+    </div>
+  </div>
+
+</div><!-- /slides -->
+
+<!-- ── NAVIGATION ── -->
+<div class="nav">
+  <button class="nav-btn" id="prev" onclick="go(-1)" disabled>←</button>
+  <div class="slide-counter" id="counter">1 / 17</div>
+  <button class="nav-btn" id="next" onclick="go(1)">→</button>
+</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const total  = slides.length;
+  let cur = 0;
+
+  // Initialize counter display accurately
+  document.getElementById('counter').textContent = '1 / ' + total;
+
+  const dotsEl = document.getElementById('dots');
+  slides.forEach((_,i) => {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i===0?' active':'');
+    d.onclick = () => goTo(i);
+    dotsEl.appendChild(d);
+  });
+
+  function goTo(n) {
+    slides[cur].classList.remove('active');
+    dotsEl.children[cur].classList.remove('active');
+    cur = n;
+    slides[cur].classList.add('active');
+    dotsEl.children[cur].classList.add('active');
+    document.getElementById('counter').textContent = (cur+1) + ' / ' + total;
+    document.getElementById('prev').disabled = cur === 0;
+    document.getElementById('next').disabled = cur === total-1;
+    document.getElementById('progress').style.width = ((cur+1)/total*100) + '%';
+  }
+
+  function go(dir) {
+    const n = cur + dir;
+    if(n >= 0 && n < total) goTo(n);
+  }
+
+  document.addEventListener('keydown', e => {
+    if(e.key === 'ArrowRight' || e.key === 'ArrowDown') go(1);
+    if(e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   go(-1);
+  });
+
+  document.getElementById('progress').style.width = (1/total*100) + '%';
+</script>
+</body>
+</html>
