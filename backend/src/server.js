@@ -76,14 +76,25 @@ app.patch('/api/tasks/:id', async (req, res) => {
   }
 });
 
-db.connect()
-  .then(() => {
-    console.log('✅ PostgreSQL connected');
-    app.listen(PORT, '0.0.0.0', () => {
-      console.log(`🚀 API running on port ${PORT}`);
-    });
-  })
-  .catch((err) => {
-    console.error('❌ PostgreSQL connection failed:', err.message);
-    process.exit(1);
-  });
+async function startServer(retries = 5, delay = 2000) {
+  while (retries > 0) {
+    try {
+      await db.connect();
+      console.log('✅ PostgreSQL connected');
+      app.listen(PORT, '0.0.0.0', () => {
+        console.log(`🚀 API running on port ${PORT}`);
+      });
+      return;
+    } catch (err) {
+      retries -= 1;
+      console.log(`⏳ Waiting for PostgreSQL to initialize... (${retries} retries remaining)`);
+      if (retries === 0) {
+        console.error('❌ PostgreSQL connection failed:', err.message);
+        process.exit(1);
+      }
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+}
+
+startServer();
