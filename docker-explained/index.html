@@ -1235,7 +1235,7 @@ build
     </div>
 
     <div class="callout">
-      💡 <strong>Presenter Tip:</strong> Mention <code>docker init</code> to show you know modern Docker tooling, but explain that understanding raw Dockerfile syntax (Modules 5 & 12) is what makes an engineer senior.
+      💡 <strong>Engineering Note:</strong> While <code>docker init</code> accelerates initial scaffolding, constructing custom multi-stage Dockerfiles ensures optimal layer caching, deterministic dependency installation, and minimal attack surface.
     </div>
   </div>
 
@@ -1464,15 +1464,15 @@ docker compose up --build</pre>
     </div>
 
     <div class="callout success">
-      🎯 <strong>The Presenter Golden Rule:</strong> <em>"Use <code>npm install</code> to build your application for the first time. Use <code>npm ci</code> inside your CI/CD runner to guarantee that the production build is identical to the millimeter."</em>
+      🎯 <strong>Core Takeaway:</strong> <em>"Use <code>npm install</code> during initial scaffolding. Use <code>npm ci</code> inside automated CI/CD runners to enforce 100% deterministic, bit-for-bit identical builds."</em>
     </div>
   </div>
 
   <!-- ==================== SLIDE: SECRET QA 1 (GIT VS DOCKER) ==================== -->
   <div class="slide">
-    <span class="module-badge secret">🔒 Presenter Deep-Dive / Q&A 01</span>
+    <span class="module-badge">Module 10: Technical Deep-Dive</span>
     <h1 class="slide-title">"If Git exists, why do we need Docker?"</h1>
-    <p class="slide-subtitle">How to answer senior developers who claim Git already solves software distribution.</p>
+    <p class="slide-subtitle">Understanding the technical boundary between source version control and OS runtime isolation.</p>
 
     <div class="grid-2">
       <div class="content-box" style="border-color:rgba(248,81,73,0.3)">
@@ -1509,7 +1509,7 @@ docker compose up --build</pre>
 
   <!-- ==================== SLIDE 17: SECRET QA 2 (OPTION A VS B) ==================== -->
   <div class="slide">
-    <span class="module-badge secret">🔒 Presenter Deep-Dive / Q&A 02</span>
+    <span class="module-badge">Module 10: Technical Deep-Dive</span>
     <h1 class="slide-title">Deployment Choice: Option A vs Option B</h1>
     <p class="slide-subtitle">Should we host the container on one central office server or install on every computer?</p>
 
@@ -1534,7 +1534,7 @@ docker compose up --build</pre>
             <td style="color:#60a5fa;font-weight:700">Option B<br><span style="font-size:11px;color:var(--text-muted);font-weight:normal">Cross-Dev on Every Laptop</span></td>
             <td>On <strong>EACH</strong> developer's computer</td>
             <td>Git + Docker Desktop</td>
-            <td><strong>Active Coding & Feature Development</strong>.<br>Developers edit code in VS Code; bind mounts provide instant hot reload in their own sandbox.</td>
+            <td><strong>Active Coding &amp; Feature Development</strong>.<br>Developers edit code in VS Code; bind mounts provide instant hot reload in their own sandbox.</td>
           </tr>
         </tbody>
       </table>
@@ -1547,9 +1547,9 @@ docker compose up --build</pre>
 
   <!-- ==================== SLIDE 18: SECRET QA 3 (2015 EXECUTION CHECKLIST) ==================== -->
   <div class="slide">
-    <span class="module-badge secret">🔒 Presenter Deep-Dive / Q&A 03</span>
-    <h1 class="slide-title">Senior Systems Engineer Verification Checklist</h1>
-    <p class="slide-subtitle">How to verify every single link in the chain live without relying on AI magic.</p>
+    <span class="module-badge">Module 10: Technical Deep-Dive</span>
+    <h1 class="slide-title">Full-Stack Verification &amp; Validation Checklist</h1>
+    <p class="slide-subtitle">Deterministic step-by-step verification to validate container health, network routing, and persistence.</p>
 
     <div class="content-box">
       <div style="font-size:13.5px;color:var(--text-main);line-height:2;">
