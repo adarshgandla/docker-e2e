@@ -341,7 +341,7 @@ dist
 <span class="kw">FROM</span> node:20-alpine <span class="kw">AS</span> base
 <span class="kw">WORKDIR</span> /app
 <span class="kw">COPY</span> package*.json ./
-<span class="kw">RUN</span> npm ci
+<span class="kw">RUN</span> npm install
 
 <span class="cm"># 2. Development Stage (Live coding via bind mounts)</span>
 <span class="kw">FROM</span> base <span class="kw">AS</span> development
@@ -355,7 +355,7 @@ dist
 <span class="kw">WORKDIR</span> /app
 <span class="kw">ENV</span> NODE_ENV=production
 <span class="kw">COPY</span> package*.json ./
-<span class="kw">RUN</span> npm ci --only=production
+<span class="kw">RUN</span> npm install --omit=dev
 <span class="kw">COPY</span> . .
 <span class="kw">EXPOSE</span> 4000
 <span class="kw">CMD</span> [<span class="str">"node"</span>, <span class="str">"src/server.js"</span>]</pre>
@@ -363,7 +363,7 @@ dist
 
       <div class="say-box">
         <strong>💬 What to say to colleagues:</strong>
-        "Notice we copy package*.json and run npm ci BEFORE copying our code. This allows Docker to cache all installed packages. Editing code won't trigger re-installation!"
+        "Notice we copy package*.json and run npm install BEFORE copying our code. This allows Docker to cache all installed packages. Editing code won't trigger re-installation!"
       </div>
     </div>
   </div>
@@ -392,7 +392,7 @@ dist
 <span class="kw">FROM</span> node:20-alpine <span class="kw">AS</span> base
 <span class="kw">WORKDIR</span> /app
 <span class="kw">COPY</span> package*.json ./
-<span class="kw">RUN</span> npm ci
+<span class="kw">RUN</span> npm install
 
 <span class="cm"># 2. Development Stage (Vite Dev Server)</span>
 <span class="kw">FROM</span> base <span class="kw">AS</span> development
