@@ -1371,6 +1371,12 @@ docker compose up --build</pre>
     <span class="kw">steps:</span>
       - <span class="kw">uses:</span> actions/checkout@v3
 
+      - <span class="kw">name:</span> Strict CI Dependency Install &amp; Test
+        <span class="kw">run:</span> |
+          cd backend
+          npm ci
+          npm test
+
       - <span class="kw">name:</span> Log in to Docker Hub
         <span class="kw">uses:</span> docker/login-action@v2
         <span class="kw">with:</span>
@@ -1394,6 +1400,71 @@ docker compose up --build</pre>
             cd /home/ubuntu/app
             docker compose pull
             docker compose up -d --remove-orphans</pre>
+    </div>
+  </div>
+
+  <!-- ==================== SLIDE: CI/CD DEPENDENCY DEEP-DIVE ==================== -->
+  <div class="slide">
+    <span class="module-badge">Module 09: Production CI/CD</span>
+    <h1 class="slide-title">npm install vs npm ci in CI/CD &amp; Docker</h1>
+    <p class="slide-subtitle">Why automated pipelines mandate npm ci, and why missing lockfiles cause the dreaded EUSAGE crash.</p>
+
+    <div class="grid-2">
+      <div class="content-box">
+        <h4 style="color:var(--primary);margin-bottom:10px">Comparing the Two Commands</h4>
+        <table class="diagram-table" style="font-size:12.5px;">
+          <thead>
+            <tr>
+              <th>Behavior</th>
+              <th><code>npm install</code></th>
+              <th><code>npm ci</code> (Clean Install)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Primary Target</strong></td>
+              <td>Local Dev &amp; Bootstrapping</td>
+              <td><strong>CI/CD Pipelines &amp; Production</strong></td>
+            </tr>
+            <tr>
+              <td><strong>Requires Lockfile?</strong></td>
+              <td><span style="color:var(--warning)">No</span> (creates one if missing)</td>
+              <td><span style="color:var(--danger)">Strictly Mandatory</span> (fails if missing)</td>
+            </tr>
+            <tr>
+              <td><strong>node_modules</strong></td>
+              <td>Overwrites / adds diff</td>
+              <td><strong>Deletes &amp; reinstalls clean</strong></td>
+            </tr>
+            <tr>
+              <td><strong>Version Drift</strong></td>
+              <td>Can drift on caret <code>^1.2.0</code></td>
+              <td><strong>100% frozen bit-for-bit match</strong></td>
+            </tr>
+            <tr>
+              <td><strong>Speed in CI</strong></td>
+              <td>Resolves tree (~20-40s)</td>
+              <td><strong>2x-3x faster</strong> (skips resolution)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="content-box">
+        <h4 style="color:var(--warning);margin-bottom:10px">The Real-World CI/CD Scenario</h4>
+        <p style="font-size:13px;color:var(--text-muted);line-height:1.7;">
+          • <strong>The Trap:</strong> If your Dockerfile has <code>RUN npm ci</code>, but you never generated a <code>package-lock.json</code> on your host laptop, Docker halts the build with:<br>
+          <code style="color:var(--danger);display:block;margin:6px 0;background:#06080e;padding:6px;border-radius:4px;border:1px solid rgba(248,81,73,0.3)">npm error The `npm ci` command can only install with an existing package-lock.json</code>
+          • <strong>Why we use npm install for local bootstrap:</strong> It works cleanly without requiring a pre-existing host lockfile.<br>
+          • <strong>How to promote to strict CI/CD:</strong> Generate lockfile on host:<br>
+          <code style="color:#58a6ff;display:block;margin:6px 0;background:#06080e;padding:6px;border-radius:4px;border:1px solid var(--border)">npm install --package-lock-only</code>
+          Commit <code>package-lock.json</code> to Git, then switch Dockerfile to <code>RUN npm ci</code>!
+        </p>
+      </div>
+    </div>
+
+    <div class="callout success">
+      🎯 <strong>The Presenter Golden Rule:</strong> <em>"Use <code>npm install</code> to build your application for the first time. Use <code>npm ci</code> inside your CI/CD runner to guarantee that the production build is identical to the millimeter."</em>
     </div>
   </div>
 

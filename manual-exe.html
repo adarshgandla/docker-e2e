@@ -365,6 +365,26 @@ dist
         <strong>💬 What to say to colleagues:</strong>
         "Notice we copy package*.json and run npm install BEFORE copying our code. This allows Docker to cache all installed packages. Editing code won't trigger re-installation!"
       </div>
+
+      <!-- CI/CD & npm ci Q&A ACCORDION -->
+      <div style="margin-top:14px; background: rgba(88, 166, 255, 0.06); border: 1px solid rgba(88, 166, 255, 0.25); border-radius: 8px; padding: 12px 16px;">
+        <div style="font-weight: 700; color: #58a6ff; font-size: 13px; display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+          <span>⚡ What if they ask: "Why npm install instead of npm ci for CI/CD?"</span>
+        </div>
+        <p style="font-size: 12.5px; color: #c9d1d9; line-height: 1.6; margin-bottom: 8px;">
+          <strong>Your Instant Answer:</strong> <em>"In production CI/CD pipelines, <code>npm ci</code> is best practice because it enforces frozen, bit-for-bit locked builds. However, <code>npm ci</code> has one strict prerequisite: it requires an existing <code>package-lock.json</code>. In this freshly scaffolded repository, we didn't run npm on the bare-metal Windows host, so no lockfile exists yet. Running <code>npm ci</code> without a lockfile throws an immediate crash (<code>EUSAGE</code>). For local bootstrap we use <code>npm install</code>. Once <code>package-lock.json</code> is committed, we switch to <code>RUN npm ci</code>."</em>
+        </p>
+        <details style="font-size: 12px; color: var(--text-muted); cursor: pointer;">
+          <summary style="color: #a7f3d0; font-weight: 600;">▶ Want to demo npm ci live? Click for the 30-second switch</summary>
+          <div style="margin-top: 8px; padding: 10px; background: #06080e; border-radius: 6px; border: 1px solid var(--border); line-height: 1.6;">
+            1. Generate host lockfile instantly without downloading node_modules:<br>
+            <code style="color:#58a6ff">cd backend; npm install --package-lock-only; cd ..</code><br><br>
+            2. Update Dockerfile:<br>
+            <code style="color:#f85149">- RUN npm install</code><br>
+            <code style="color:#3fb950">+ RUN npm ci</code> (and <code>RUN npm ci --omit=dev</code> for production)
+          </div>
+        </details>
+      </div>
     </div>
   </div>
 
@@ -414,6 +434,16 @@ dist
       <div class="say-box">
         <strong>💬 What to say to colleagues:</strong>
         "In production, we don't keep Node.js running for static React files. We compile with Node, throw Node away, and copy dist/ into a 25MB Nginx web server!"
+      </div>
+
+      <!-- CI/CD & npm ci Q&A ACCORDION -->
+      <div style="margin-top:14px; background: rgba(88, 166, 255, 0.06); border: 1px solid rgba(88, 166, 255, 0.25); border-radius: 8px; padding: 12px 16px;">
+        <div style="font-weight: 700; color: #58a6ff; font-size: 13px; display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+          <span>⚡ What if they ask: "Should the frontend build use npm ci?"</span>
+        </div>
+        <p style="font-size: 12.5px; color: #c9d1d9; line-height: 1.6; margin-bottom: 8px;">
+          <strong>Same Rule Applies:</strong> <code>npm ci</code> requires an existing host <code>package-lock.json</code>. In production pipelines, commit <code>frontend/package-lock.json</code> and switch line 395 to <code>RUN npm ci</code> to prevent unexpected React or Vite minor version changes from breaking the production build.
+        </p>
       </div>
     </div>
   </div>
