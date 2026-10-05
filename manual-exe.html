@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Manual Execution Checklist — Docker Live Setup</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+
+:root {
+  --bg: #090b10;
+  --surface: #121622;
+  --surface-hover: #1a2030;
+  --border: #232d45;
+  --primary: #58a6ff;
+  --success: #3fb950;
+  --warning: #d29922;
+  --danger: #f85149;
+  --purple: #bc8cff;
+  --text-main: #f0f6fc;
+  --text-muted: #8b949e;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text-main);
+  line-height: 1.6;
+  padding: 32px 20px 80px;
+}
+
+.container {
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+/* ── HEADER ── */
+.header-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px 28px;
+  margin-bottom: 28px;
+  position: relative;
+}
+.header-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.header-sub {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+.progress-counter {
+  position: absolute;
+  top: 24px;
+  right: 28px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary);
+  background: rgba(88, 166, 255, 0.12);
+  border: 1px solid rgba(88, 166, 255, 0.3);
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+/* ── STEP CARDS ── */
+.step-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 20px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.step-card.completed {
+  border-color: rgba(63, 185, 80, 0.4);
+}
+
+.step-header {
+  padding: 16px 22px;
+  background: #0d111b;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.step-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.step-checkbox {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: var(--success);
+}
+.step-number {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+.step-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+}
+.step-file-badge {
+  font-family: monospace;
+  font-size: 12px;
+  background: #06080e;
+  border: 1px solid var(--border);
+  padding: 3px 8px;
+  border-radius: 5px;
+  color: #a7f3d0;
+}
+
+.step-body {
+  padding: 20px 24px;
+}
+
+/* ── CODE BOX ── */
+.code-wrapper {
+  background: #06080e;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin: 12px 0;
+  position: relative;
+  overflow: hidden;
+}
+.code-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 14px;
+  background: #0b0f18;
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  font-family: monospace;
+  color: var(--text-muted);
+}
+.copy-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.copy-btn:hover {
+  color: #fff;
+  border-color: var(--primary);
+  background: var(--surface-hover);
+}
+.copy-btn.copied {
+  color: var(--success);
+  border-color: var(--success);
+}
+pre.code-content {
+  padding: 14px 16px;
+  font-family: "Cascadia Code", "Fira Code", monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #d1d5db;
+  overflow-x: auto;
+  user-select: text;
+}
+.kw { color: #f472b6; font-weight: 600; }
+.fn { color: #60a5fa; }
+.str { color: #a7f3d0; }
+.cm { color: #6b7280; font-style: italic; }
+.var { color: #fbbf24; }
+
+/* ── PRESENTER TALKING POINTS ── */
+.say-box {
+  background: rgba(88, 166, 255, 0.08);
+  border-left: 3px solid var(--primary);
+  border-radius: 0 8px 8px 0;
+  padding: 10px 14px;
+  margin-top: 12px;
+  font-size: 13px;
+  color: #c9d1d9;
+}
+.say-box strong {
+  color: var(--primary);
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+
+/* ── CHECKLIST ITEMS ── */
+.check-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 6px 0;
+  font-size: 13.5px;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- TOP SUMMARY -->
+  <div class="header-box">
+    <div class="header-title">
+      ⚡ Docker Manual Execution Checklist
+    </div>
+    <div class="header-sub">
+      Side-by-side workbench guide: keep this open while writing files in VS Code and executing in terminal.
+    </div>
+    <div class="progress-counter" id="progressCounter">0 / 8 Complete</div>
+  </div>
+
+  <!-- ==================== STEP 0: PRE-FLIGHT ==================== -->
+  <div class="step-card">
+    <div class="step-header">
+      <div class="step-title-row">
+        <input type="checkbox" class="step-checkbox" onchange="updateProgress(this)">
+        <div>
+          <span class="step-number">STEP 0</span>
+          <div class="step-name">Pre-Flight Port &amp; Docker Check</div>
+        </div>
+      </div>
+      <span class="step-file-badge">Terminal</span>
+    </div>
+    <div class="step-body">
+      <p style="font-size:13.5px;color:var(--text-muted);">Confirm Docker Desktop is running and your required ports (80, 3000, 4000, 5432, 6379) are not blocked by local background apps.</p>
+      
+      <div class="code-wrapper">
+        <div class="code-bar">
+          <span>Terminal (PowerShell)</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy Clean Code</button>
+        </div>
+        <pre class="code-content">docker version</pre>
+      </div>
+
+      <div class="say-box">
+        <strong>💬 What to say to colleagues:</strong>
+        "Before writing container recipes, we confirm Docker daemon is healthy. Notice our local computer has no PostgreSQL, Node, or Redis running on bare metal."
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== STEP 1: BACKEND DOCKERIGNORE ==================== -->
+  <div class="step-card">
+    <div class="step-header">
+      <div class="step-title-row">
+        <input type="checkbox" class="step-checkbox" onchange="updateProgress(this)">
+        <div>
+          <span class="step-number">STEP 1</span>
+          <div class="step-name">Create Backend Context Filter</div>
+        </div>
+      </div>
+      <span class="step-file-badge">backend/.dockerignore</span>
+    </div>
+    <div class="step-body">
+      <p style="font-size:13.5px;color:var(--text-muted);">In VS Code, create a file named <code>.dockerignore</code> inside the <code>backend/</code> folder:</p>
+
+      <div class="code-wrapper">
+        <div class="code-bar">
+          <span>backend/.dockerignore</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy Clean Code</button>
+        </div>
+        <pre class="code-content">node_modules
+npm-debug.log
+.env
+.git</pre>
+      </div>
+
+      <div class="say-box">
+        <strong>💬 What to say to colleagues:</strong>
+        "Step 1 is always .dockerignore. If we skip this, Docker will copy our Windows node_modules and secret .env into the Linux container. We must block host leakage first."
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== STEP 2: FRONTEND DOCKERIGNORE ==================== -->
+  <div class="step-card">
+    <div class="step-header">
+      <div class="step-title-row">
+        <input type="checkbox" class="step-checkbox" onchange="updateProgress(this)">
+        <div>
+          <span class="step-number">STEP 2</span>
+          <div class="step-name">Create Frontend Context Filter</div>
+        </div>
+      </div>
+      <span class="step-file-badge">frontend/.dockerignore</span>
+    </div>
+    <div class="step-body">
+      <p style="font-size:13.5px;color:var(--text-muted);">In VS Code, create <code>.dockerignore</code> inside <code>frontend/</code>:</p>
+
+      <div class="code-wrapper">
+        <div class="code-bar">
+          <span>frontend/.dockerignore</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy Clean Code</button>
+        </div>
+        <pre class="code-content">node_modules
+dist
+.env
+.git</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== STEP 3: BACKEND DOCKERFILE ==================== -->
+  <div class="step-card">
+    <div class="step-header">
+      <div class="step-title-row">
+        <input type="checkbox" class="step-checkbox" onchange="updateProgress(this)">
+        <div>
+          <span class="step-number">STEP 3</span>
+          <div class="step-name">Write Backend Multi-Stage Dockerfile</div>
+        </div>
+      </div>
+      <span class="step-file-badge">backend/Dockerfile</span>
+    </div>
+    <div class="step-body">
+      <p style="font-size:13.5px;color:var(--text-muted);">Create <code>backend/Dockerfile</code> with layer caching &amp; dev/prod targets:</p>
+
+      <div class="code-wrapper">
+        <div class="code-bar">
+          <span>backend/Dockerfile</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy Clean Code</button>
+        </div>
+        <pre class="code-content"><span class="cm"># 1. Base &amp; Dependency Layer</span>
+<span class="kw">FROM</span> node:20-alpine <span class="kw">AS</span> base
+<span class="kw">WORKDIR</span> /app
+<span class="kw">COPY</span> package*.json ./
+<span class="kw">RUN</span> npm ci
+
+<span class="cm"># 2. Development Stage (Live coding via bind mounts)</span>
+<span class="kw">FROM</span> base <span class="kw">AS</span> development
+<span class="kw">ENV</span> NODE_ENV=development
+<span class="kw">COPY</span> . .
+<span class="kw">EXPOSE</span> 4000
+<span class="kw">CMD</span> [<span class="str">"npm"</span>, <span class="str">"run"</span>, <span class="str">"dev"</span>]
+
+<span class="cm"># 3. Production Stage (Lean non-root runner)</span>
+<span class="kw">FROM</span> node:20-alpine <span class="kw">AS</span> production
+<span class="kw">WORKDIR</span> /app
+<span class="kw">ENV</span> NODE_ENV=production
+<span class="kw">COPY</span> package*.json ./
+<span class="kw">RUN</span> npm ci --only=production
+<span class="kw">COPY</span> . .
+<span class="kw">EXPOSE</span> 4000
+<span class="kw">CMD</span> [<span class="str">"node"</span>, <span class="str">"src/server.js"</span>]</pre>
+      </div>
+
+      <div class="say-box">
+        <strong>💬 What to say to colleagues:</strong>
+        "Notice we copy package*.json and run npm ci BEFORE copying our code. This allows Docker to cache all installed packages. Editing code won't trigger re-installation!"
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== STEP 4: FRONTEND DOCKERFILE ==================== -->
+  <div class="step-card">
+    <div class="step-header">
+      <div class="step-title-row">
+        <input type="checkbox" class="step-checkbox" onchange="updateProgress(this)">
+        <div>
+          <span class="step-number">STEP 4</span>
+          <div class="step-name">Write Frontend Multi-Stage Dockerfile</div>
+        </div>
+      </div>
+      <span class="step-file-badge">frontend/Dockerfile</span>
+    </div>
+    <div class="step-body">
+      <p style="font-size:13.5px;color:var(--text-muted);">Create <code>frontend/Dockerfile</code> (Vite dev server + Nginx production server):</p>
+
+      <div class="code-wrapper">
+        <div class="code-bar">
+          <span>frontend/Dockerfile</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy Clean Code</button>
+        </div>
+        <pre class="code-content"><span class="cm"># 1. Base &amp; Dependencies</span>
+<span class="kw">FROM</span> node:20-alpine <span class="kw">AS</span> base
+<span class="kw">WORKDIR</span> /app
+<span class="kw">COPY</span> package*.json ./
+<span class="kw">RUN</span> npm ci
+
+<span class="cm"># 2. Development Stage (Vite Dev Server)</span>
+<span class="kw">FROM</span> base <span class="kw">AS</span> development
+<span class="kw">COPY</span> . .
+<span class="kw">EXPOSE</span> 3000
+<span class="kw">CMD</span> [<span class="str">"npx"</span>, <span class="str">"vite"</span>, <span class="str">"--host"</span>, <span class="str">"0.0.0.0"</span>, <span class="str">"--port"</span>, <span class="str">"3000"</span>]
+
+<span class="cm"># 3. Production Stage (Build React &amp; serve with Nginx)</span>
+<span class="kw">FROM</span> base <span class="kw">AS</span> build
+<span class="kw">COPY</span> . .
+<span class="kw">RUN</span> npm run build
+
+<span class="kw">FROM</span> nginx:alpine <span class="kw">AS</span> production
+<span class="kw">COPY</span> --from=build /app/dist /usr/share/nginx/html
+<span class="kw">EXPOSE</span> 80
+<span class="kw">CMD</span> [<span class="str">"nginx"</span>, <span class="str">"-g"</span>, <span class="str">"daemon off;"</span>]</pre>
+      </div>
+
+      <div class="say-box">
+        <strong>💬 What to say to colleagues:</strong>
+        "In production, we don't keep Node.js running for static React files. We compile with Node, throw Node away, and copy dist/ into a 25MB Nginx web server!"
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== STEP 5: DOCKER COMPOSE ==================== -->
+  <div class="step-card">
+    <div class="step-header">
+      <div class="step-title-row">
+        <input type="checkbox" class="step-checkbox" onchange="updateProgress(this)">
+        <div>
+          <span class="step-number">STEP 5</span>
+          <div class="step-name">Write Root docker-compose.yml</div>
+        </div>
+      </div>
+      <span class="step-file-badge">docker-compose.yml</span>
+    </div>
+    <div class="step-body">
+      <p style="font-size:13.5px;color:var(--text-muted);">In the project root (<code>focused-darwin/</code>), create <code>docker-compose.yml</code>:</p>
+
+      <div class="code-wrapper">
+        <div class="code-bar">
+          <span>docker-compose.yml</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy Clean Code</button>
+        </div>
+        <pre class="code-content"><span class="kw">version:</span> <span class="str">'3.8'</span>
+
+<span class="kw">networks:</span>
+  <span class="fn">app-network:</span>
+    <span class="kw">driver:</span> bridge
+
+<span class="kw">volumes:</span>
+  <span class="fn">postgres_data:</span>
+  <span class="fn">redis_data:</span>
+
+<span class="kw">services:</span>
+  <span class="cm"># 1. Database (PostgreSQL 16)</span>
+  <span class="fn">postgres:</span>
+    <span class="kw">image:</span> postgres:16-alpine
+    <span class="kw">container_name:</span> task_postgres
+    <span class="kw">environment:</span>
+      <span class="var">POSTGRES_USER:</span> taskuser
+      <span class="var">POSTGRES_PASSWORD:</span> taskpass123
+      <span class="var">POSTGRES_DB:</span> taskflow
+    <span class="kw">ports:</span>
+      - <span class="str">"5432:5432"</span>
+    <span class="kw">volumes:</span>
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+    <span class="kw">networks:</span>
+      - app-network
+
+  <span class="cm"># 2. Cache (Redis 7)</span>
+  <span class="fn">redis:</span>
+    <span class="kw">image:</span> redis:7-alpine
+    <span class="kw">container_name:</span> task_redis
+    <span class="kw">ports:</span>
+      - <span class="str">"6379:6379"</span>
+    <span class="kw">volumes:</span>
+      - redis_data:/data
+    <span class="kw">networks:</span>
+      - app-network
+
+  <span class="cm"># 3. Express Backend API</span>
+  <span class="fn">api:</span>
+    <span class="kw">build:</span>
+      <span class="kw">context:</span> ./backend
+      <span class="kw">target:</span> development
+    <span class="kw">container_name:</span> task_api
+    <span class="kw">environment:</span>
+      <span class="var">PORT:</span> 4000
+      <span class="var">DATABASE_URL:</span> postgresql://taskuser:taskpass123@postgres:5432/taskflow
+      <span class="var">REDIS_URL:</span> redis://redis:6379
+    <span class="kw">ports:</span>
+      - <span class="str">"4000:4000"</span>
+    <span class="kw">volumes:</span>
+      - ./backend:/app
+      - /app/node_modules
+    <span class="kw">depends_on:</span>
+      - postgres
+      - redis
+    <span class="kw">networks:</span>
+      - app-network
+
+  <span class="cm"># 4. React Frontend</span>
+  <span class="fn">frontend:</span>
+    <span class="kw">build:</span>
+      <span class="kw">context:</span> ./frontend
+      <span class="kw">target:</span> development
+    <span class="kw">container_name:</span> task_frontend
+    <span class="kw">ports:</span>
+      - <span class="str">"3000:3000"</span>
+    <span class="kw">volumes:</span>
+      - ./frontend:/app
+      - /app/node_modules
+    <span class="kw">depends_on:</span>
+      - api
+    <span class="kw">networks:</span>
+      - app-network</pre>
+      </div>
+
+      <div class="say-box">
+        <strong>💬 What to say to colleagues:</strong>
+        "Notice DATABASE_URL uses '@postgres:5432', not localhost. Inside Docker's virtual bridge network, containers reach each other by service name through Docker's internal DNS."
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== STEP 6: LAUNCH ==================== -->
+  <div class="step-card">
+    <div class="step-header">
+      <div class="step-title-row">
+        <input type="checkbox" class="step-checkbox" onchange="updateProgress(this)">
+        <div>
+          <span class="step-number">STEP 6</span>
+          <div class="step-name">The Big Launch: Start All Services</div>
+        </div>
+      </div>
+      <span class="step-file-badge">Terminal</span>
+    </div>
+    <div class="step-body">
+      <p style="font-size:13.5px;color:var(--text-muted);">Execute in your terminal at project root:</p>
+
+      <div class="code-wrapper">
+        <div class="code-bar">
+          <span>Terminal (PowerShell)</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy Clean Code</button>
+        </div>
+        <pre class="code-content">docker compose up --build</pre>
+      </div>
+
+      <div style="margin-top:12px;font-size:13px;color:var(--text-muted);">
+        <strong>Watch for these exact green logs:</strong><br>
+        ✔ <code>task_postgres | database system is ready to accept connections</code><br>
+        ✔ <code>task_api | ✅ PostgreSQL connected</code> &amp; <code>✅ Redis connected</code><br>
+        ✔ <code>task_frontend | VITE v5... ready in ... ms</code>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== STEP 7: LIVE VERIFICATION ==================== -->
+  <div class="step-card">
+    <div class="step-header">
+      <div class="step-title-row">
+        <input type="checkbox" class="step-checkbox" onchange="updateProgress(this)">
+        <div>
+          <span class="step-number">STEP 7</span>
+          <div class="step-name">Live Endpoint &amp; Volume Inspection</div>
+        </div>
+      </div>
+      <span class="step-file-badge">Browser &amp; CLI</span>
+    </div>
+    <div class="step-body">
+      <p style="font-size:13.5px;color:var(--text-muted);margin-bottom:12px;">Run these 4 verification steps to prove the stack works end-to-end:</p>
+
+      <div class="check-row">
+        <span>🌐</span>
+        <div><strong>Open Frontend:</strong> <a href="http://localhost:3000" target="_blank" style="color:var(--primary)">http://localhost:3000</a> — Add a task live in the UI.</div>
+      </div>
+
+      <div class="check-row">
+        <span>📊</span>
+        <div><strong>Check Backend API:</strong> <a href="http://localhost:4000/api/tasks" target="_blank" style="color:var(--primary)">http://localhost:4000/api/tasks</a> — See task JSON directly from PostgreSQL.</div>
+      </div>
+
+      <div class="check-row">
+        <span>🔍</span>
+        <div style="width:100%;">
+          <strong>Inspect Postgres Volume Files Live:</strong>
+          <div class="code-wrapper" style="margin:6px 0;">
+            <div class="code-bar">
+              <span>Terminal</span>
+              <button class="copy-btn" onclick="copyCode(this)">Copy Clean Code</button>
+            </div>
+            <pre class="code-content">docker exec -it task_postgres ls -la /var/lib/postgresql/data</pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="check-row">
+        <span>🔥</span>
+        <div><strong>Test Hot Reload:</strong> Open <code>frontend/src/App.jsx</code> in VS Code, change the title, save. The browser refreshes instantly without rebuilding Docker!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== STEP 8: CLEAN TEARDOWN ==================== -->
+  <div class="step-card">
+    <div class="step-header">
+      <div class="step-title-row">
+        <input type="checkbox" class="step-checkbox" onchange="updateProgress(this)">
+        <div>
+          <span class="step-number">STEP 8</span>
+          <div class="step-name">Clean Teardown &amp; Reset</div>
+        </div>
+      </div>
+      <span class="step-file-badge">Terminal</span>
+    </div>
+    <div class="step-body">
+      <p style="font-size:13.5px;color:var(--text-muted);">When finished presenting, cleanly stop the containers:</p>
+
+      <div class="code-wrapper">
+        <div class="code-bar">
+          <span>Terminal</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy Clean Code</button>
+        </div>
+        <pre class="code-content"><span class="cm"># Stop all containers (data in volume is preserved)</span>
+docker compose down
+
+<span class="cm"># Or wipe everything fresh including database data</span>
+docker compose down -v</pre>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function updateProgress(checkbox) {
+    const card = checkbox.closest('.step-card');
+    card.classList.toggle('completed', checkbox.checked);
+
+    const allCheckboxes = document.querySelectorAll('.step-checkbox');
+    const checked = document.querySelectorAll('.step-checkbox:checked').length;
+    document.getElementById('progressCounter').innerText = `${checked} / ${allCheckboxes.length} Complete`;
+  }
+
+  function stripComments(text) {
+    const lines = text.split('\n');
+    const cleaned = [];
+    
+    for (let i = 0; i < lines.length; i++) {
+      let line = lines[i];
+      const trimmed = line.trim();
+      
+      // If line is entirely a comment (# or //), skip it
+      if (trimmed.startsWith('#') || trimmed.startsWith('//') || trimmed.startsWith('/*') || trimmed.startsWith('*')) {
+        continue;
+      }
+      
+      // If line has an inline comment (e.g. "WORKDIR /app  # set folder"), strip the comment part
+      const hashIndex = line.indexOf('  #');
+      if (hashIndex !== -1 && !line.includes('http://') && !line.includes('https://') && !line.includes('postgresql://') && !line.includes('redis://')) {
+        line = line.substring(0, hashIndex).trimEnd();
+      }
+
+      // Avoid duplicate blank lines
+      if (line.trim() === '' && cleaned.length > 0 && cleaned[cleaned.length - 1].trim() === '') {
+        continue;
+      }
+      
+      cleaned.push(line);
+    }
+    
+    return cleaned.join('\n').trim();
+  }
+
+  function copyCode(btn) {
+    const wrapper = btn.closest('.code-wrapper');
+    const rawCode = wrapper.querySelector('pre').innerText;
+    
+    // Automatically strip all comments so only pure code is copied to clipboard
+    const cleanCode = stripComments(rawCode);
+
+    navigator.clipboard.writeText(cleanCode).then(() => {
+      const orig = btn.innerText;
+      btn.innerText = '✓ Copied Clean Code!';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.innerText = orig;
+        btn.classList.remove('copied');
+      }, 2000);
+    });
+  }
+</script>
+</body>
+</html>
