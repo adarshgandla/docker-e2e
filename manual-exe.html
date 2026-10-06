@@ -223,7 +223,7 @@ pre.code-content {
     <div class="header-sub">
       Standard Operating Procedure (SOP) — Containerization, Service Orchestration &amp; Verification Spec
     </div>
-    <div class="progress-counter" id="progressCounter">0 / 8 Complete</div>
+    <div class="progress-counter" id="progressCounter">0 / 10 Complete</div>
   </div>
 
   <!-- ==================== STEP 0: PRE-FLIGHT ==================== -->
@@ -350,13 +350,22 @@ dist
 <span class="kw">EXPOSE</span> 4000
 <span class="kw">CMD</span> [<span class="str">"npm"</span>, <span class="str">"run"</span>, <span class="str">"dev"</span>]
 
-<span class="cm"># 3. Production Stage (Lean non-root runner)</span>
+<span class="cm"># 3. Production Stage (Hardened non-root runner)</span>
 <span class="kw">FROM</span> node:20-alpine <span class="kw">AS</span> production
 <span class="kw">WORKDIR</span> /app
 <span class="kw">ENV</span> NODE_ENV=production
+
+<span class="cm"># Security: Dedicated system user &amp; group (SOC 2 / CIS Benchmark)</span>
+<span class="kw">RUN</span> addgroup -g 1001 -S nodejs &amp;&amp; adduser -S -u 1001 -G nodejs nodejs
+
 <span class="kw">COPY</span> package*.json ./
 <span class="kw">RUN</span> npm install --omit=dev
-<span class="kw">COPY</span> . .
+
+<span class="kw">COPY</span> --chown=nodejs:nodejs . .
+
+<span class="cm"># Drop privileges from root (UID 0) to nodejs (UID 1001)</span>
+<span class="kw">USER</span> nodejs
+
 <span class="kw">EXPOSE</span> 4000
 <span class="kw">CMD</span> [<span class="str">"node"</span>, <span class="str">"src/server.js"</span>]</pre>
       </div>
@@ -364,6 +373,19 @@ dist
       <div class="say-box">
         <strong>📐 Layer Caching Strategy: Independent Dependency Invalidation</strong>
         <code>COPY package*.json ./</code> and <code>RUN npm install</code> precede application source code. Docker caches this dependency layer. Subsequent application source code edits never invalidate the dependency cache or trigger package re-installation.
+      </div>
+
+      <!-- SECURITY SPECIFICATION: NON-ROOT -->
+      <div style="margin-top:14px; background: rgba(248, 81, 73, 0.06); border: 1px solid rgba(248, 81, 73, 0.25); border-radius: 8px; padding: 12px 16px;">
+        <div style="font-weight: 700; color: #f85149; font-size: 13px; display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+          <span>🛡️ Security Benchmark: Non-Root Execution (SOC 2 &amp; CIS Compliance)</span>
+        </div>
+        <p style="font-size: 12.5px; color: #c9d1d9; line-height: 1.6; margin-bottom: 4px;">
+          <strong>Why Root is Dangerous:</strong> Default base images run processes as <code>root (UID 0)</code>. If an attacker exploits an application vulnerability (e.g. Remote Code Execution), they inherit root privileges inside the container, drastically simplifying host kernel privilege escalation.
+        </p>
+        <p style="font-size: 12.5px; color: #a7f3d0; line-height: 1.6;">
+          <strong>Hardening:</strong> Creating <code>nodejs (UID 1001)</code> and declaring <code>USER nodejs</code> ensures the runtime process operates with the least privilege required, passing enterprise compliance audits.
+        </p>
       </div>
 
       <!-- CI/CD & npm ci SPECIFICATION ACCORDION -->
@@ -510,6 +532,15 @@ dist
       <span class="kw">context:</span> ./backend
       <span class="kw">target:</span> development
     <span class="kw">container_name:</span> task_api
+    <span class="kw">stop_grace_period:</span> 15s
+    <span class="kw">deploy:</span>
+      <span class="kw">resources:</span>
+        <span class="kw">limits:</span>
+          <span class="var">cpus:</span> <span class="str">'0.50'</span>
+          <span class="var">memory:</span> 512M
+        <span class="kw">reservations:</span>
+          <span class="var">cpus:</span> <span class="str">'0.25'</span>
+          <span class="var">memory:</span> 256M
     <span class="kw">environment:</span>
       <span class="var">PORT:</span> 4000
       <span class="var">DATABASE_URL:</span> postgresql://taskuser:taskpass123@postgres:5432/taskflow
@@ -545,6 +576,19 @@ dist
       <div class="say-box">
         <strong>📐 Service Discovery &amp; Virtual Bridge Network Routing</strong>
         <code>DATABASE_URL</code> routes to <code>@postgres:5432</code> rather than localhost. Inside Docker's isolated user-defined bridge network, services communicate by service name via Docker's embedded DNS server.
+      </div>
+
+      <!-- RESOURCE GOVERNANCE & SIGTERM ACCORDION -->
+      <div style="margin-top:14px; background: rgba(188, 140, 255, 0.06); border: 1px solid rgba(188, 140, 255, 0.25); border-radius: 8px; padding: 12px 16px;">
+        <div style="font-weight: 700; color: #bc8cff; font-size: 13px; display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+          <span>⚡ Resource Governance &amp; Graceful Termination (OOM 137 &amp; SIGTERM)</span>
+        </div>
+        <p style="font-size: 12.5px; color: #c9d1d9; line-height: 1.6; margin-bottom: 6px;">
+          <strong>OOM Killer Protection:</strong> Without memory limits, runaway queries or memory leaks consume 100% of host RAM until the Linux kernel terminates the container with <code>Exit Code 137 (128 + 9 SIGKILL)</code>. Enforcing <code>memory: 512M</code> isolates resource impact.
+        </p>
+        <p style="font-size: 12.5px; color: #c9d1d9; line-height: 1.6;">
+          <strong>Zero-Downtime Draining:</strong> When rolling updates or <code>docker stop</code> run, Docker sends <code>SIGTERM</code>. Setting <code>stop_grace_period: 15s</code> grants Node/Express 15 seconds to drain active client requests, finish database writes, and close pools before Docker forcefully issues <code>SIGKILL</code>.
+        </p>
       </div>
     </div>
   </div>
@@ -624,16 +668,80 @@ dist
         <span>🔥</span>
         <div><strong>Test Hot Reload:</strong> Open <code>frontend/src/App.jsx</code> in VS Code, change the title, save. The browser refreshes instantly without rebuilding Docker!</div>
       </div>
+
+      <div class="check-row">
+        <span>🛡️</span>
+        <div style="width:100%;">
+          <strong>Verify Non-Root Execution (Security Audit):</strong>
+          <div class="code-wrapper" style="margin:6px 0;">
+            <div class="code-bar">
+              <span>Terminal</span>
+              <button class="copy-btn" onclick="copyCode(this)">Copy Clean Code</button>
+            </div>
+            <pre class="code-content">docker exec -it task_api id</pre>
+          </div>
+          <span style="font-size:12px;color:var(--text-muted)">Confirms process user is unprivileged <code>uid=1001(nodejs)</code>, not root (0).</span>
+        </div>
+      </div>
+
+      <div class="check-row">
+        <span>⚡</span>
+        <div style="width:100%;">
+          <strong>Verify Memory &amp; CPU Limits in Real Time:</strong>
+          <div class="code-wrapper" style="margin:6px 0;">
+            <div class="code-bar">
+              <span>Terminal</span>
+              <button class="copy-btn" onclick="copyCode(this)">Copy Clean Code</button>
+            </div>
+            <pre class="code-content">docker stats task_api --no-stream</pre>
+          </div>
+          <span style="font-size:12px;color:var(--text-muted)">Displays enforced 512MiB memory ceiling and current resource consumption.</span>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- ==================== STEP 8: CLEAN TEARDOWN ==================== -->
+  <!-- ==================== STEP 8: MULTI-ARCH BUILDX ==================== -->
   <div class="step-card">
     <div class="step-header">
       <div class="step-title-row">
         <input type="checkbox" class="step-checkbox" onchange="updateProgress(this)">
         <div>
           <span class="step-number">STEP 8</span>
+          <div class="step-name">Multi-Architecture Cross-Compilation (docker buildx)</div>
+        </div>
+      </div>
+      <span class="step-file-badge">Terminal</span>
+    </div>
+    <div class="step-body">
+      <p style="font-size:13.5px;color:var(--text-muted);">Compile production images targeting both <strong>Apple Silicon (ARM64)</strong> and <strong>Cloud Servers (AMD64 / x86_64)</strong> simultaneously to prevent <code>exec format error</code>:</p>
+
+      <div class="code-wrapper">
+        <div class="code-bar">
+          <span>Terminal (PowerShell)</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy Clean Code</button>
+        </div>
+        <pre class="code-content"><span class="cm"># 1. Initialize and switch to a multi-platform Buildx builder instance</span>
+docker buildx create --name enterprise-builder --use
+
+<span class="cm"># 2. Build multi-arch OCI image manifest for AMD64 &amp; ARM64</span>
+docker buildx build --platform linux/amd64,linux/arm64 -t myusername/taskflow-api:latest ./backend</pre>
+      </div>
+
+      <div class="say-box">
+        <strong>🌐 Cross-Compilation Architecture Rationale</strong>
+        Modern software teams develop on ARM64 (M-Series MacBooks) while production environments deploy on AMD64 (AWS EC2 / GCP). <code>docker buildx</code> leverages QEMU emulation and OCI Multi-Platform Manifests so one single tag runs natively on every hardware architecture without binary mismatch crashes.
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== STEP 9: CLEAN TEARDOWN ==================== -->
+  <div class="step-card">
+    <div class="step-header">
+      <div class="step-title-row">
+        <input type="checkbox" class="step-checkbox" onchange="updateProgress(this)">
+        <div>
+          <span class="step-number">STEP 9</span>
           <div class="step-name">Clean Teardown &amp; Reset</div>
         </div>
       </div>
@@ -647,7 +755,7 @@ dist
           <span>Terminal</span>
           <button class="copy-btn" onclick="copyCode(this)">Copy Clean Code</button>
         </div>
-        <pre class="code-content"><span class="cm"># Stop all containers (data in volume is preserved)</span>
+        <pre class="code-content"><span class="cm"># Stop all containers gracefully (SIGTERM allows connections to drain)</span>
 docker compose down
 
 <span class="cm"># Or wipe everything fresh including database data</span>

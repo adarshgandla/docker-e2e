@@ -1572,6 +1572,153 @@ docker compose up --build</pre>
     </div>
   </div>
 
+  <!-- ==================== SLIDE: DOCKER SECURITY & NON-ROOT ==================== -->
+  <div class="slide">
+    <span class="module-badge" style="background:rgba(248,81,73,0.15);color:var(--danger);border-color:rgba(248,81,73,0.3)">Module 11: Enterprise Security</span>
+    <h1 class="slide-title">Docker Security &amp; Non-Root Execution</h1>
+    <p class="slide-subtitle">Eliminating the #1 container vulnerability: why default root access enables kernel breakout.</p>
+
+    <div class="grid-2">
+      <div class="content-box" style="border-color:rgba(248,81,73,0.35)">
+        <h4 style="color:var(--danger);margin-bottom:10px">❌ The Default Root Trap (UID 0)</h4>
+        <p style="font-size:13px;color:var(--text-muted);line-height:1.7;">
+          • In standard base images (<code>node:20-alpine</code>, <code>python:3.11</code>), container processes run as <strong>root (UID 0)</strong> by default.<br><br>
+          • <strong>The Breach Path:</strong> If an attacker discovers a Remote Code Execution (RCE) vulnerability in your Express/FastAPI app or a 3rd-party dependency, they immediately execute shell commands as <strong>root</strong> inside the container.<br><br>
+          • <strong>Kernel Escape Risk:</strong> From root inside a container, breaking out to the host Linux kernel (via mounted Docker sockets, system capabilities, or kernel CVEs) is vastly easier.<br><br>
+          • <strong>Audit Failure:</strong> SOC 2, ISO 27001, and CIS Docker Benchmark Rule 4.1 strictly flag root-level containers as critical audit findings.
+        </p>
+      </div>
+
+      <div class="content-box" style="border-color:rgba(63,185,80,0.35)">
+        <h4 style="color:var(--success);margin-bottom:10px">✅ Hardened Non-Root Implementation</h4>
+        <p style="font-size:13px;color:var(--text-muted);line-height:1.7;">
+          Create a dedicated system user and switch to it before launching the process:
+        </p>
+        <div class="code-wrapper" style="margin:10px 0;">
+          <div class="code-header">
+            <span>Dockerfile (Production Stage)</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre class="code-content"><span class="cm"># 1. Create unprivileged group &amp; user</span>
+<span class="kw">RUN</span> addgroup -g 1001 -S nodejs &amp;&amp; \
+    adduser -S -u 1001 -G nodejs nodejs
+
+<span class="cm"># 2. Assign files to the unprivileged user</span>
+<span class="kw">COPY</span> --chown=nodejs:nodejs . .
+
+<span class="cm"># 3. Drop root privileges completely</span>
+<span class="kw">USER</span> nodejs
+
+<span class="kw">EXPOSE</span> 4000
+<span class="kw">CMD</span> [<span class="str">"node"</span>, <span class="str">"src/server.js"</span>]</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout" style="border-color:rgba(88,166,255,0.3)">
+      🛡️ <strong>Verification Command:</strong> Run <code>docker exec -it task_api id</code>. A secure container outputs <code>uid=1001(nodejs) gid=1001(nodejs)</code> instead of <code>uid=0(root)</code>.
+    </div>
+  </div>
+
+  <!-- ==================== SLIDE: MULTI-ARCH BUILDS (BUILDX) ==================== -->
+  <div class="slide">
+    <span class="module-badge">Module 11: Enterprise Tooling</span>
+    <h1 class="slide-title">Multi-Architecture Builds (docker buildx)</h1>
+    <p class="slide-subtitle">Bridging the Apple Silicon (ARM64) vs Cloud Server (AMD64 / x86_64) hardware gap.</p>
+
+    <div class="grid-2">
+      <div class="content-box">
+        <h4 style="color:var(--warning);margin-bottom:10px">The Hardware Mismatch Problem</h4>
+        <p style="font-size:13px;color:var(--text-muted);line-height:1.7;">
+          • Developers write and build code on <strong>Apple Silicon MacBooks</strong> (ARM64 / aarch64 architecture).<br><br>
+          • Cloud servers (AWS EC2, GCP Compute, DigitalOcean) typically run on <strong>AMD64 (x86_64)</strong> architecture.<br><br>
+          • <strong>The Crash:</strong> If an image is built on ARM64 and pushed directly to an AMD64 production server, the container crashes instantly on startup with:<br>
+          <code style="color:var(--danger);display:block;margin:8px 0;background:#06080e;padding:6px;border-radius:4px;border:1px solid rgba(248,81,73,0.3)">exec /usr/local/bin/node: exec format error</code>
+          • <strong>The Reason:</strong> CPU machine instructions compiled for ARM cannot execute on Intel/AMD x86 processors without cross-compilation.
+        </p>
+      </div>
+
+      <div class="content-box">
+        <h4 style="color:var(--primary);margin-bottom:10px">The OCI Multi-Platform Solution</h4>
+        <p style="font-size:13px;color:var(--text-muted);line-height:1.7;">
+          <code>docker buildx</code> bundles BuildKit with QEMU CPU emulation to generate a <strong>single image tag</strong> containing binary manifests for both CPU architectures:
+        </p>
+        <div class="code-wrapper" style="margin:10px 0;">
+          <div class="code-header">
+            <span>Terminal (Cross-Compile &amp; Push)</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre class="code-content"><span class="cm"># 1. Initialize multi-platform builder instance</span>
+docker buildx create --name enterprise-builder --use
+
+<span class="cm"># 2. Build for both architectures &amp; push multi-arch manifest</span>
+docker buildx build \
+  --platform linux/amd64,linux/arm64 \
+  -t mycompany/taskflow-api:v1.0.0 \
+  --push ./backend</pre>
+        </div>
+        <p style="font-size:12.5px;color:#a7f3d0;line-height:1.6;">
+          ✔ Cloud registries (Docker Hub / AWS ECR) automatically serve the exact matching architecture layer when pulled by an M-series Mac or an AMD64 server.
+        </p>
+      </div>
+    </div>
+
+    <div class="callout success">
+      🌐 <strong>Universal Compatibility:</strong> One image tag (<code>mycompany/api:v1.0.0</code>) works flawlessly across Developer Laptops (ARM64), CI/CD Runners, and Cloud Kubernetes clusters (AMD64).
+    </div>
+  </div>
+
+  <!-- ==================== SLIDE: RESOURCE LIMITS & GRACEFUL SHUTDOWN ==================== -->
+  <div class="slide">
+    <span class="module-badge">Module 11: Production Reliability</span>
+    <h1 class="slide-title">Resource Governance &amp; Graceful Shutdowns</h1>
+    <p class="slide-subtitle">Preventing host RAM exhaustion (OOM Killer Exit 137) and dropped in-flight HTTP requests.</p>
+
+    <div class="grid-2">
+      <div class="content-box">
+        <h4 style="color:var(--warning);margin-bottom:10px">1. Memory Ceilings &amp; The OOM Killer (Exit 137)</h4>
+        <p style="font-size:13px;color:var(--text-muted);line-height:1.7;">
+          • By default, a Docker container can consume <strong>100% of host RAM and CPU</strong>.<br><br>
+          • If a runaway analytical query or memory leak occurs, the host kernel triggers the <strong>Linux OOM (Out-Of-Memory) Killer</strong>.<br><br>
+          • The OOM Killer instantly kills the container with <strong>Exit Code 137</strong> (128 + 9 SIGKILL) without logging an error in your app.<br><br>
+          • <strong>The Fix in Compose:</strong> Throttle hard limits to protect host neighbors:
+        </p>
+        <div class="code-wrapper" style="margin:8px 0;">
+          <pre class="code-content"><span class="kw">deploy:</span>
+  <span class="kw">resources:</span>
+    <span class="kw">limits:</span>
+      <span class="var">cpus:</span> <span class="str">'0.50'</span>       <span class="cm"># Cap at 50% single CPU core</span>
+      <span class="var">memory:</span> 512M       <span class="cm"># Hard memory ceiling</span>
+    <span class="kw">reservations:</span>
+      <span class="var">memory:</span> 256M       <span class="cm"># Guaranteed baseline</span></pre>
+        </div>
+      </div>
+
+      <div class="content-box">
+        <h4 style="color:var(--primary);margin-bottom:10px">2. SIGTERM Handling &amp; Zero-Downtime Draining</h4>
+        <p style="font-size:13px;color:var(--text-muted);line-height:1.7;">
+          • When rolling deployments or <code>docker stop</code> execute, Docker sends <code>SIGTERM</code>, waits <code>stop_grace_period</code> (default 10s), then forcibly issues <code>SIGKILL</code>.<br><br>
+          • <strong>Without Handling:</strong> In-flight user requests are terminated mid-stream, dropping checkout transactions and corrupting state.<br><br>
+          • <strong>With Handling:</strong> Node/FastAPI drains active requests, closes database pools, and exits cleanly:
+        </p>
+        <div class="code-wrapper" style="margin:8px 0;">
+          <pre class="code-content"><span class="cm">// Node.js / Express Graceful Draining</span>
+<span class="fn">process.on</span>(<span class="str">'SIGTERM'</span>, () => {
+  server.close(async () => {
+    await db.end();      <span class="cm">// Close PostgreSQL pool</span>
+    await cache.quit();  <span class="cm">// Disconnect Redis</span>
+    process.exit(0);     <span class="cm">// Clean exit code 0</span>
+  });
+});</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout success">
+      🎯 <strong>Zero-Downtime Guarantee:</strong> Combining <code>stop_grace_period: 15s</code> in Docker Compose with application <code>SIGTERM</code> connection draining ensures 100% of in-flight user requests finish before the old container retires.
+    </div>
+  </div>
+
 </div>
 
 <!-- BOTTOM BAR -->

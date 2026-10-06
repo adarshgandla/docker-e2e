@@ -81,9 +81,36 @@ async function startServer(retries = 5, delay = 2000) {
     try {
       await db.connect();
       console.log('✅ PostgreSQL connected');
-      app.listen(PORT, '0.0.0.0', () => {
+      const server = app.listen(PORT, '0.0.0.0', () => {
         console.log(`🚀 API running on port ${PORT}`);
       });
+
+      // Graceful Shutdown Handler (Drains connections on Docker stop / SIGTERM)
+      const handleShutdown = async (signal) => {
+        console.log(`\n🛑 Received ${signal}. Initiating graceful shutdown...`);
+        server.close(async () => {
+          console.log('🔌 HTTP server stopped accepting new requests.');
+          try {
+            await db.end();
+            console.log('📦 PostgreSQL connection pool closed.');
+            await cache.quit();
+            console.log('⚡ Redis client disconnected.');
+            process.exit(0);
+          } catch (err) {
+            console.error('❌ Error during graceful shutdown cleanup:', err.message);
+            process.exit(1);
+          }
+        });
+
+        // Force shutdown if requests do not finish draining within 10 seconds
+        setTimeout(() => {
+          console.error('⚠️ Forcing process exit after shutdown timeout');
+          process.exit(1);
+        }, 10000).unref();
+      };
+
+      process.on('SIGTERM', () => handleShutdown('SIGTERM'));
+      process.on('SIGINT', () => handleShutdown('SIGINT'));
       return;
     } catch (err) {
       retries -= 1;
