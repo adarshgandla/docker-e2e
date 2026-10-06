@@ -1,0 +1,52 @@
+# ==============================================================================
+# 🐳 TRACK 3: HOST DATABASE BRIDGE (DOCKER COMPOSE)
+# ==============================================================================
+# This Compose configuration orchestrates a containerized application connecting
+# to a MySQL database running natively on your HOST machine (outside Docker).
+#
+# Key Concepts Demonstrated:
+# 1. 'host.docker.internal' - Special DNS name pointing to host machine
+# 2. 'extra_hosts' - Cross-platform compatibility guarantee (required for Linux)
+# 3. Port isolation - Runs on port 4001 to prevent conflicts with 4000/5000
+# ==============================================================================
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: taskflow_host_mysql_app
+    restart: unless-stopped
+    stop_grace_period: 15s
+
+    # Resource governance
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+    environment:
+      PORT: 4001
+      NODE_ENV: production
+      # 🔑 THE KEY TO HOST DATABASE ACCESS:
+      # 'host.docker.internal' routes outside the container network to the host OS.
+      MYSQL_HOST: ${MYSQL_HOST:-host.docker.internal}
+      MYSQL_PORT: ${MYSQL_PORT:-3306}
+      MYSQL_USER: ${MYSQL_USER:-root}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-root}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-taskflow}
+
+    # 🌐 LINUX & CROSS-PLATFORM COMPATIBILITY:
+    # On Windows and macOS Docker Desktop, 'host.docker.internal' is built-in.
+    # On Linux Docker Engine, this 'extra_hosts' directive maps 'host.docker.internal'
+    # to the Docker host bridge gateway IP address automatically.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+    ports:
+      # Map container port 4001 to host port 4001
+      - "${PORT:-4001}:4001"

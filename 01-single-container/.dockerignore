@@ -1,0 +1,34 @@
+# ==============================================================================
+# 🐳 DOCKERIGNORE: Single-Container Build Context Protection
+# ==============================================================================
+# Essential rule: Ignore host dependencies, build artifacts, and secret files
+# to keep the Docker build context minimal (< 1MB) and secure.
+# ==============================================================================
+
+# Node dependencies (must always be installed inside Linux container)
+node_modules
+*/node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build artifacts
+dist
+public/dist
+
+# Version control & OS metadata
+.git
+.gitignore
+.DS_Store
+Thumbs.db
+
+# Secrets & Environment variables
+.env
+.env.*
+!.env.example
+
+# Local SQLite databases (prevent baking local test data into the image)
+data/
+*.db
+*.sqlite
+*.sqlite3

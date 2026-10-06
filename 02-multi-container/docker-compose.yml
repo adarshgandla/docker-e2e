@@ -1,0 +1,160 @@
+# ==============================================================================
+# 🐳 TASKFLOW — MULTI-CONTAINER MICROSERVICES ORCHESTRATION (DOCKER COMPOSE)
+# ==============================================================================
+# This configuration orchestrates a full-stack production-grade architecture:
+# 1. PostgreSQL (Relational Database with automated schema initialization)
+# 2. Redis (In-Memory Key-Value Cache for millisecond query caching)
+# 3. Express API (Node.js REST service with connection retries & graceful shutdown)
+# 4. React Vite Frontend (Client-side Single Page Application with live hot reload)
+#
+# Key Concepts Demonstrated:
+# - User-defined bridge network (Automatic internal DNS resolution)
+# - Persistent named volumes (Data safety across container restarts)
+# - Host-to-container bind mounts (Instant local code hot reloading)
+# - Anonymous container volumes (/app/node_modules mask host dependencies)
+# - Resource governance limits (OOM Killer prevention & CPU throttling)
+# - Graceful termination (stop_grace_period allows connection draining)
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 🌐 NETWORKS
+# ------------------------------------------------------------------------------
+# User-defined bridge networks provide:
+# 1. Automatic DNS resolution between containers using service names (e.g. 'postgres')
+# 2. Complete isolation from other Docker projects running on the host
+# ------------------------------------------------------------------------------
+networks:
+  app-network:
+    driver: bridge
+
+# ------------------------------------------------------------------------------
+# 💾 VOLUMES
+# ------------------------------------------------------------------------------
+# Named volumes are managed entirely by Docker inside the Docker VM/storage pool.
+# Unlike bind mounts, named volumes are optimized for Linux filesystem I/O performance
+# and ensure database records survive container recreation (docker compose down).
+# ------------------------------------------------------------------------------
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+# ------------------------------------------------------------------------------
+# 🚀 SERVICES
+# ------------------------------------------------------------------------------
+services:
+
+  # ----------------------------------------------------------------------------
+  # 1. DATABASE SERVICE: PostgreSQL 16
+  # ----------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: task_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-taskuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-taskpass123}
+      POSTGRES_DB: ${POSTGRES_DB:-taskflow}
+    # Port mapping format: "HOST_PORT:CONTAINER_PORT"
+    # Port 5432 is exposed to host for debugging with tools like DBeaver or TablePlus.
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      # 1. Persistent data directory where PostgreSQL stores database files
+      - postgres_data:/var/lib/postgresql/data
+      # 2. Initialization script: executed automatically ONLY on initial DB cluster creation
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-taskuser} -d ${POSTGRES_DB:-taskflow}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - app-network
+
+  # ----------------------------------------------------------------------------
+  # 2. CACHE SERVICE: Redis 7
+  # ----------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: task_redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      # Persistent Redis AOF/RDB dump storage
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - app-network
+
+  # ----------------------------------------------------------------------------
+  # 3. BACKEND API SERVICE: Express Node.js
+  # ----------------------------------------------------------------------------
+  api:
+    build:
+      context: ./backend
+      target: development # Uses development target for hot reload via nodemon
+    container_name: task_api
+    restart: unless-stopped
+    # Graceful Shutdown: Grants Node.js 15s to drain active requests before SIGKILL
+    stop_grace_period: 15s
+    # Resource Governance: Prevents runaway queries from starving host RAM (OOM 137)
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'     # Throttle to max 50% single CPU core
+          memory: 512M     # Hard memory ceiling
+        reservations:
+          cpus: '0.25'     # Guaranteed baseline CPU
+          memory: 256M     # Guaranteed baseline RAM
+    environment:
+      PORT: 4000
+      # Internal network DNS: uses service name '@postgres' and '@redis', NOT localhost
+      DATABASE_URL: postgresql://${POSTGRES_USER:-taskuser}:${POSTGRES_PASSWORD:-taskpass123}@postgres:5432/${POSTGRES_DB:-taskflow}
+      REDIS_URL: redis://redis:6379
+      NODE_ENV: development
+    ports:
+      - "${API_PORT:-4000}:4000"
+    volumes:
+      # 1. Bind mount: mirrors local backend/ folder into /app for live code updates
+      - ./backend:/app
+      # 2. Anonymous volume: preserves container-compiled Linux node_modules
+      #    Prevents host Windows/Mac node_modules from overwriting container files!
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  # ----------------------------------------------------------------------------
+  # 4. FRONTEND SERVICE: React (Vite Dev Server)
+  # ----------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      target: development # Uses Vite dev server with Hot Module Replacement (HMR)
+    container_name: task_frontend
+    restart: unless-stopped
+    environment:
+      VITE_API_URL: http://localhost:${API_PORT:-4000}
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    volumes:
+      # 1. Bind mount: mirrors local frontend/ folder into /app for instant HMR
+      - ./frontend:/app
+      # 2. Anonymous volume: preserves container-compiled Linux node_modules
+      - /app/node_modules
+    depends_on:
+      - api
+    networks:
+      - app-network
