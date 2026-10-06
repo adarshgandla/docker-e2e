@@ -1,7 +1,12 @@
 # 🐳 The Production Docker Masterclass & Architecture Curriculum
 
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](./VERSION)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+[![Docker](https://img.shields.io/badge/docker-ready-2496ED.svg?logo=docker&logoColor=white)](https://www.docker.com/)
+[![Node.js](https://img.shields.io/badge/node.js-v20-green.svg?logo=node.js)](https://nodejs.org/)
+
 > **A production-ready, hands-on Docker learning repository for software developers, DevOps practitioners, and platform engineers.**
-> Covers everything from single-container monolithic deployment to multi-container microservices orchestration, enterprise security hardening, and cross-platform compilation.
+> Covers everything from single-container monolithic deployment to multi-container microservices orchestration, host database bridging, enterprise security hardening, and cross-platform compilation.
 
 ---
 
@@ -10,7 +15,7 @@
 This repository is structured into three production-grade architectural paradigms, alongside comprehensive interactive visual guides and runbooks:
 
 ```
-docker-masterclass/
+docker-e2e/
 │
 ├── 📦 01-single-container/          # ALL-IN-ONE ARCHITECTURE (Monolith Track)
 │   ├── src/                         # Express API + Static React Server + SQLite
@@ -36,8 +41,10 @@ docker-masterclass/
 │   └── README.md                    # Deep-dive host.docker.internal & MySQL permissions guide
 │
 ├── 🎨 docker_explained.html        # 26-SLIDE VISUAL MASTERCLASS DECK (Interactive Presentation)
-│
 ├── ⚡ manual-exe.html               # INTERACTIVE PRODUCTION RUNBOOK (SOP Checklist)
+│
+├── 📜 LICENSE                      # MIT Open Source License (Adarsh Gandla)
+├── 🏷️ VERSION                      # Release version tracker (1.0.0)
 │
 └── 📚 docs/                         # REFERENCE MANUALS & SPECIFICATIONS
     ├── docker-masterclass.md        # Comprehensive technical manual
