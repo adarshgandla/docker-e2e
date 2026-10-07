@@ -170,6 +170,7 @@
 ## 🔗 Repository Navigation
 
 * **[README.md](./README.md)** — Main Architecture & Quick Execution Cheatsheet
+* **[presenter-sidebar.md](./presenter-sidebar.md)** — 20% Width Presenter Glance-and-Execute Cheatsheet
 * **[commands.md](./commands.md)** — Essential Common Docker Commands Reference Manual
 * **[Track 1: Single-Container Monolith](./01-single-container/)** — Monolithic packaging
 * **[Track 2: Multi-Container Microservices](./02-multi-container/)** — Decoupled services
