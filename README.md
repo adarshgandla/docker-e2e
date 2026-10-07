@@ -52,6 +52,7 @@ docker-e2e/
 │
 ├── 🎨 docker_explained.html        # 27-SLIDE VISUAL MASTERCLASS DECK (Interactive Presentation)
 ├── ⚡ manual-exe.html               # INTERACTIVE PRODUCTION RUNBOOK (SOP Checklist)
+├── 🖼️ imgs.md                     # COMPLETE VISUAL SLIDES DECK (7 Diagrams + Speaker Notes)
 │
 ├── 📜 LICENSE                      # MIT Open Source License (Adarsh Gandla)
 ├── 🏷️ VERSION                      # Release version tracker (1.2.0)
@@ -228,6 +229,15 @@ Open these files in any modern web browser for immediate interactive training:
 * **Standard Operating Procedure (SOP)**: Designed to be opened side-by-side with VS Code during live coding.
 * **1-Click Clean Code Copying**: Strips comments on copy so developers can paste pure code directly into terminal or editors while reading architectural rationale on screen.
 * **10 Step Checkpoints**: Real-time completion progress tracking with live endpoint tests.
+
+### 3. 🖼️ [Visual Presentation Slides Deck (`imgs.md`)](./imgs.md)
+* **7 Comprehensive Architecture Slides**:
+  * The 4 Core Pillars of Docker Architecture (Dockerfile, Image, Registry, Container)
+  * The Packaging Principle: Application Code + Stack Dependencies
+  * Multi-Environment Promotion Pipeline (DEV ➔ SIT ➔ UAT ➔ PILOT ➔ PROD)
+  * Build & Push CI/CD Lifecycle Flow
+  * Host OS, Docker Engine, and Container Virtualization Mechanics
+* **Built-in Speaker Notes**: Word-for-word talking points to explain each slide to your team in under 60 seconds.
 
 ---
 
