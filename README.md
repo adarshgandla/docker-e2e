@@ -5,9 +5,12 @@
 [![Docker](https://img.shields.io/badge/docker-ready-2496ED.svg?logo=docker&logoColor=white)](https://www.docker.com/)
 [![Docker CI/CD](https://github.com/adarshgandla/docker-e2e/actions/workflows/docker-ci-cd.yml/badge.svg)](https://github.com/adarshgandla/docker-e2e/actions/workflows/docker-ci-cd.yml)
 [![Node.js](https://img.shields.io/badge/node.js-v20-green.svg?logo=node.js)](https://nodejs.org/)
+[![YouTube Course](https://img.shields.io/badge/YouTube-Video%20Masterclass-FF0000.svg?logo=youtube&logoColor=white)](https://youtu.be/2bg9MAtiHwo?si=HVE5_7IaKjV9kuex)
 
 > **A production-ready, hands-on Docker learning repository for software developers, DevOps practitioners, and platform engineers.**
-> Covers everything from single-container monolithic deployment to multi-container microservices orchestration, host database bridging, enterprise security hardening, and cross-platform compilation.
+> Covers everything from single-container monolithic deployment to multi-container microservices orchestration, host database bridging, enterprise security hardening, and cross-platform compilation.  
+> 
+> 📺 **Companion Video Masterclass:** Built around the core architectural paradigms taught in [Ashok IT - Docker & Kubernetes Full Course in 5 Hours](https://youtu.be/2bg9MAtiHwo?si=HVE5_7IaKjV9kuex). See [imgs.md](./imgs.md) for the slide diagrams and speaker cues.
 
 ---
 

@@ -1,7 +1,24 @@
 # 🖼️ Docker Visual Architecture & Presentation Slides Deck
 
 > **A Complete Visual Reference Manual and Presentation Deck for the Docker Masterclass.**  
-> Contains all architectural diagrams, environment promotion pipelines, container lifecycle flows, and word-for-word speaker notes for each slide.
+> Contains all architectural diagrams, environment promotion pipelines, container lifecycle flows, and word-for-word speaker notes for each slide.  
+> 
+> 📺 **Companion Video Masterclass:** [Ashok IT - Docker & Kubernetes Full Course in 5 Hours](https://youtu.be/2bg9MAtiHwo?si=HVE5_7IaKjV9kuex)
+
+---
+
+## 🎬 Video Syllabus & Repository Track Alignment
+
+| Video Lecture Topic | Slide Diagram | Repository Implementation Track | Key Primitives / Concepts |
+|:---|:---|:---|:---|
+| **Virtualization vs Containers** | [Slide 7](#7-docker-engine--container-virtualization-architecture) | Architecture Foundations | Host OS, Docker Engine, C1/C2/C3 isolation |
+| **Docker Core Architecture** | [Slide 1](#1-the-4-core-pillars-of-docker-architecture) | All Tracks | Dockerfile, Image, Registry, Container |
+| **Packaging Code & Dependencies** | [Slide 2](#2-the-packaging-principle-code--runtime-dependencies) | [Track 1 (`01-single-container`)](./01-single-container/) | Multi-stage Dockerfile, Node v20, SQLite |
+| **Build & Push to Registry** | [Slide 5](#5-the-build--push-lifecycle) | [Track 4 (`04-cicd-automation`)](./04-cicd-automation/) | `docker build`, `docker push`, GHCR, Docker Hub |
+| **Multi-Environment Promotion** | [Slide 3](#3-enterprise-environment-promotion-pipeline) & [Slide 4](#4-the-5-enterprise-application-environments) | [Track 4 (`04-cicd-automation`)](./04-cicd-automation/) | DEV ➔ SIT ➔ UAT ➔ PILOT ➔ PROD parity |
+| **Registry to Multi-Server Deploy** | [Slide 6](#6-registry-to-multi-environment-deployment) | [Track 4 (`04-cicd-automation`)](./04-cicd-automation/) | Single image digest, environment-specific `.env` |
+| **Multi-Container Apps & DB** | Architecture Guides | [Track 2 (`02-multi-container`)](./02-multi-container/) | `docker-compose.yml`, PostgreSQL, Redis, Networks |
+| **Hybrid DB & Real-World Bridge** | Architecture Guides | [Track 3 (`03-host-database-mysql`)](./03-host-database-mysql/) | `host.docker.internal:3306`, MySQL user host grants |
 
 ---
 
