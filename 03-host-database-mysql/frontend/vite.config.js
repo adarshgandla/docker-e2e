@@ -10,5 +10,11 @@ export default defineConfig({
     watch: {
       usePolling: true,
     },
+    proxy: {
+      '/api': {
+        target: 'http://backend:4001',
+        changeOrigin: true,
+      },
+    },
   },
 })

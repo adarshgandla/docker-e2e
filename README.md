@@ -34,11 +34,10 @@ docker-e2e/
 │   └── README.md                    # Deep-dive multi-container orchestration guide
 │
 ├── 🐬 03-host-database-mysql/       # HOST DATABASE BRIDGE ARCHITECTURE (Hybrid Track)
-│   ├── src/                         # Express API connecting to host.docker.internal:3306
+│   ├── backend/                     # Express API connecting to host.docker.internal:3306
 │   ├── frontend/                    # React 18 UI with host DB diagnostic banner
 │   ├── scripts/                     # setup-host-mysql.sql (permissions & schema)
-│   ├── Dockerfile                   # Non-root multi-stage production build
-│   ├── docker-compose.yml           # extra_hosts bridge & port 4001 configuration
+│   ├── docker-compose.yml           # extra_hosts bridge, backend (:4001) & frontend (:3001)
 │   └── README.md                    # Deep-dive host.docker.internal & MySQL permissions guide
 │
 ├── ⚙️ 04-cicd-automation/           # AUTOMATED CI/CD & CONTINUOUS DEPLOYMENT (DevOps Track)
@@ -258,7 +257,8 @@ cd 03-host-database-mysql
 docker compose up --build -d
 
 # Access in browser
-# Frontend & API: http://localhost:4001
+# Frontend UI: http://localhost:3001
+# Backend API: http://localhost:4001/api/health
 ```
 
 ### Option D: Automated CI/CD Continuous Deployment (with Watchtower)

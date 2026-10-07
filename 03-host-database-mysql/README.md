@@ -96,16 +96,17 @@ docker compose up -d --build
 ```
 
 ### 3. Open in Browser:
-- **Web UI & Diagnostics**: [`http://localhost:4001`](http://localhost:4001)
+- **React Frontend UI**: [`http://localhost:3001`](http://localhost:3001)
 - **API Health Endpoint**: [`http://localhost:4001/api/health`](http://localhost:4001/api/health)
 - **Tasks JSON**: [`http://localhost:4001/api/tasks`](http://localhost:4001/api/tasks)
 
 ---
 
-## 🔌 Port Allocation Across All 3 Tracks
+## 🔌 Port Allocation Across All Tracks
 
 | Track | Directory | Architecture | Host URL |
 | :--- | :--- | :--- | :--- |
 | **Track 1** | `01-single-container/` | All-in-One Monolith (SQLite) | `http://localhost:5000` |
 | **Track 2** | `02-multi-container/` | Microservices (Postgres + Redis) | `http://localhost:3000` (UI) / `:4000` (API) |
-| **Track 3** | `03-host-database-mysql/`| Host DB Bridge (Host MySQL) | `http://localhost:4001` |
+| **Track 3** | `03-host-database-mysql/`| Decoupled Host DB Bridge (Host MySQL) | `http://localhost:3001` (UI) / `:4001` (API) |
+| **Track 4** | `04-cicd-automation/` | Continuous Deployment (Watchtower) | `http://localhost:5000` / `:4001` |

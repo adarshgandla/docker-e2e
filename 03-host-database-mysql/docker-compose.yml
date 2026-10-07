@@ -1,21 +1,30 @@
 # ==============================================================================
-# 🐳 TRACK 3: HOST DATABASE BRIDGE (DOCKER COMPOSE)
+# 🐳 TRACK 3: DECOUPLED ARCHITECTURE (HOST MYSQL BRIDGE)
 # ==============================================================================
-# This Compose configuration orchestrates a containerized application connecting
-# to a MySQL database running natively on your HOST machine (outside Docker).
+# This configuration matches the EXACT same decoupled structure as Track 2!
 #
-# Key Concepts Demonstrated:
-# 1. 'host.docker.internal' - Special DNS name pointing to host machine
-# 2. 'extra_hosts' - Cross-platform compatibility guarantee (required for Linux)
-# 3. Port isolation - Runs on port 4001 to prevent conflicts with 4000/5000
+# Track 2 had:
+#   1. frontend container (React Vite)
+#   2. backend container (Express API)
+#   3. postgres container (in Docker)
+#   4. redis container (in Docker)
+#
+# Track 3 has:
+#   1. frontend container (React Vite) -> Identical to Track 2
+#   2. backend container (Express API)  -> Identical to Track 2
+#   * NO containerized DB! The backend connects to your laptop's local MySQL
+#     using 'host.docker.internal' and 'extra_hosts'!
 # ==============================================================================
 
 services:
-  app:
+  # ----------------------------------------------------------------------------
+  # 1. BACKEND SERVICE: Express API Bridging to Host MySQL
+  # ----------------------------------------------------------------------------
+  backend:
     build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: taskflow_host_mysql_app
+      context: ./backend
+      target: development
+    container_name: taskflow_mysql_backend
     restart: unless-stopped
     stop_grace_period: 15s
 
@@ -31,22 +40,44 @@ services:
 
     environment:
       PORT: 4001
-      NODE_ENV: production
-      # 🔑 THE KEY TO HOST DATABASE ACCESS:
-      # 'host.docker.internal' routes outside the container network to the host OS.
+      NODE_ENV: development
+      # 🔑 THE ONLY NEW CONCEPT: Connecting to Host Machine MySQL
       MYSQL_HOST: ${MYSQL_HOST:-host.docker.internal}
       MYSQL_PORT: ${MYSQL_PORT:-3306}
       MYSQL_USER: ${MYSQL_USER:-root}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-root}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-taskflow}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-simple_app}
 
     # 🌐 LINUX & CROSS-PLATFORM COMPATIBILITY:
-    # On Windows and macOS Docker Desktop, 'host.docker.internal' is built-in.
-    # On Linux Docker Engine, this 'extra_hosts' directive maps 'host.docker.internal'
-    # to the Docker host bridge gateway IP address automatically.
+    # Maps 'host.docker.internal' to the host machine gateway IP
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
     ports:
-      # Map container port 4001 to host port 4001
-      - "${PORT:-4001}:4001"
+      - "4001:4001"
+
+    volumes:
+      # Live code hot-reloading (same as Track 2)
+      - ./backend:/app
+      - /app/node_modules
+
+  # ----------------------------------------------------------------------------
+  # 2. FRONTEND SERVICE: React Vite UI (Same pattern as Track 2)
+  # ----------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      target: development
+    container_name: taskflow_mysql_frontend
+    restart: unless-stopped
+    ports:
+      # Port 3001 to avoid colliding with Track 2 (Port 3000)
+      - "3001:3000"
+
+    volumes:
+      # Live code hot-reloading with HMR (same as Track 2)
+      - ./frontend:/app
+      - /app/node_modules
+
+    depends_on:
+      - backend
