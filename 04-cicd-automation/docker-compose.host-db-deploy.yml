@@ -15,9 +15,15 @@
 # ==============================================================================
 
 services:
-  app:
-    image: ghcr.io/adarshgandla/docker-e2e-single:latest
-    container_name: taskflow_prod_host_db
+  # ----------------------------------------------------------------------------
+  # 1. Express API Backend (Bridging to Host MySQL)
+  # ----------------------------------------------------------------------------
+  backend:
+    build:
+      context: ../03-host-database-mysql/backend
+      target: production
+    image: ghcr.io/adarshgandla/docker-e2e-mysql-backend:latest
+    container_name: taskflow_prod_host_backend
     restart: unless-stopped
     ports:
       - "4001:4001"
@@ -26,15 +32,32 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=4001
-      - DB_TYPE=mysql
       - MYSQL_HOST=${MYSQL_HOST:-host.docker.internal}
       - MYSQL_PORT=${MYSQL_PORT:-3306}
       - MYSQL_USER=${MYSQL_USER:-root}
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-root}
       - MYSQL_DATABASE=${MYSQL_DATABASE:-simple_app}
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
 
+  # ----------------------------------------------------------------------------
+  # 2. React Vite Frontend
+  # ----------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ../03-host-database-mysql/frontend
+      target: production
+    image: ghcr.io/adarshgandla/docker-e2e-mysql-frontend:latest
+    container_name: taskflow_prod_host_frontend
+    restart: unless-stopped
+    ports:
+      - "3001:80"
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+
+  # ----------------------------------------------------------------------------
+  # 3. Watchtower Daemon (Auto-Deployment Agent)
+  # ----------------------------------------------------------------------------
   watchtower:
     image: containrrr/watchtower:latest
     container_name: taskflow_watchtower_host_db
@@ -42,7 +65,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
-      - WATCHTOWER_POLL_INTERVAL=60
+      - WATCHTOWER_POLL_INTERVAL=30
       - WATCHTOWER_CLEANUP=true
       - WATCHTOWER_LABEL_ENABLE=true
       - WATCHTOWER_INCLUDE_RESTARTING=true
