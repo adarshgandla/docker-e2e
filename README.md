@@ -206,6 +206,13 @@ Open these files in any modern web browser for immediate interactive training:
      * **Ubuntu / Debian**: `RUN groupadd -g 1001 appgroup && useradd -r -u 1001 -g appgroup appuser`
      * **RedHat / Rocky**: `RUN groupadd -g 1001 appgroup && useradd -r -u 1001 -g appgroup appuser`
    * Safely pre-provisions write permissions for runtime disks (e.g. SQLite `/data` via `chown -R 1001:1001 /data`).
+   * **⏱️ Quick Team Talking Points & Decision Matrix**:
+     | Question | Practical Answer to Tell Your Team |
+     |---|---|
+     | **What does it do?** | Drops root permissions so our Node.js app runs as an unprivileged user (`UID 1001:1001`). |
+     | **Why is it necessary?** | If our web app or an npm dependency gets compromised, the attacker is locked in restricted user space and cannot touch host system files or kernel boundaries. |
+     | **Is it mandatory?** | **Optional** on local developer laptops (Docker runs fine without it). **Mandatory** for production deployments and CI/CD pipelines (automated scanners will block root images). |
+     | **When is it used?** | Placed at the very bottom of the production runtime stage in your Dockerfile, right before `CMD`. |
 
 2. **Cross-Architecture Multi-Platform Builds (`docker buildx`)**
    * Eliminates the `exec format error` crash between Apple Silicon (`ARM64`) laptops and Cloud (`AMD64 / x86_64`) servers.

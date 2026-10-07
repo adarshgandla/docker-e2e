@@ -58,11 +58,12 @@ When you merge or push code to the `main` branch:
    - **Track 2 Backend**: `ghcr.io/adarshgandla/docker-e2e-api:latest`
    - **Track 2 Frontend**: `ghcr.io/adarshgandla/docker-e2e-frontend:latest`
 
-### 2. 🤖 Continuous Deployment (`docker-compose.deploy.yml`)
+### 2. 🤖 Continuous Deployment (`04-cicd-automation/`)
 To have your server or machine run the latest build automatically:
 1. Run the deployment stack once:
    ```bash
-   docker compose -f docker-compose.deploy.yml up -d
+   cd 04-cicd-automation
+   docker compose -f docker-compose.single-deploy.yml up -d
    ```
 2. Two containers start:
    - `taskflow_prod_app`: Runs the production app on port `5000`.
@@ -78,8 +79,10 @@ To have your server or machine run the latest build automatically:
 ## 🚀 How to Run the Automated Deployment Locally
 
 ```bash
+cd 04-cicd-automation
+
 # 1. Pull the published image and start with Watchtower
-docker compose -f docker-compose.deploy.yml up -d
+docker compose -f docker-compose.single-deploy.yml up -d
 
 # 2. View running containers
 docker ps
@@ -106,3 +109,13 @@ docker logs -f taskflow_watchtower
 
 3. **Persistent Volume Protection**:
    Because SQLite data lives on named volume `taskflow_prod_data:/data`, container updates never erase database records or user tasks.
+
+4. **Non-Root Runtime Hardening (`USER 1001:1001`)**:
+   All published container images enforce numeric UID `1001:1001` to pass enterprise SOC 2 and CIS Docker Benchmark audits.
+
+   | Question | Practical Answer to Tell Your Team |
+   |---|---|
+   | **What does it do?** | Drops root permissions so our Node.js app runs as an unprivileged user (`UID 1001:1001`). |
+   | **Why is it necessary?** | If our web app or an npm dependency gets compromised, the attacker is locked in restricted user space and cannot touch host system files or kernel boundaries. |
+   | **Is it mandatory?** | **Optional** on local developer laptops (Docker runs fine without it). **Mandatory** for production deployments and CI/CD pipelines (automated scanners will block root images). |
+   | **When is it used?** | Placed at the very bottom of the production runtime stage in your Dockerfile, right before `CMD`. |
