@@ -57,8 +57,6 @@ docker-e2e/
 ├── ⚡ manual-exe.html               # INTERACTIVE PRODUCTION RUNBOOK (SOP Checklist)
 ├── 🖼️ imgs.md                     # COMPLETE VISUAL SLIDES DECK (7 Diagrams + Speaker Notes)
 ├── 💻 commands.md                 # COMMON DOCKER COMMANDS (Natural CLI Reference Manual)
-├── 🎙️ presenter-sidebar.md        # 20% SPLIT SCREEN SIDEBAR (Glance-and-Execute Cue Cards)
-├── 🎛️ presenter-hud.html          # INTERACTIVE SIDEBAR HUD (1-Click Copy, Stopwatch, Cues)
 │
 ├── 📜 LICENSE                      # MIT Open Source License (Adarsh Gandla)
 ├── 🏷️ VERSION                      # Release version tracker (1.2.0)

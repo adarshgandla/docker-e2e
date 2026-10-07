@@ -25,3 +25,7 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+
+# Presenter Local Sidebar & HUD
+presenter-sidebar.md
+presenter-hud.html
