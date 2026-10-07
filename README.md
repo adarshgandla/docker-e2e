@@ -1,8 +1,9 @@
 # 🐳 The Production Docker Masterclass & Architecture Curriculum
 
-[![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](./VERSION)
+[![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)](./VERSION)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![Docker](https://img.shields.io/badge/docker-ready-2496ED.svg?logo=docker&logoColor=white)](https://www.docker.com/)
+[![Docker CI/CD](https://github.com/adarshgandla/docker-e2e/actions/workflows/docker-ci-cd.yml/badge.svg)](https://github.com/adarshgandla/docker-e2e/actions/workflows/docker-ci-cd.yml)
 [![Node.js](https://img.shields.io/badge/node.js-v20-green.svg?logo=node.js)](https://nodejs.org/)
 
 > **A production-ready, hands-on Docker learning repository for software developers, DevOps practitioners, and platform engineers.**
@@ -40,16 +41,27 @@ docker-e2e/
 │   ├── docker-compose.yml           # extra_hosts bridge & port 4001 configuration
 │   └── README.md                    # Deep-dive host.docker.internal & MySQL permissions guide
 │
+├── ⚙️ 04-cicd-automation/           # AUTOMATED CI/CD & CONTINUOUS DEPLOYMENT (DevOps Track)
+│   ├── docker-compose.single-deploy.yml   # Single container deployment + Watchtower auto-updater
+│   ├── docker-compose.multi-deploy.yml    # Microservices deployment + Watchtower auto-updater
+│   ├── docker-compose.host-db-deploy.yml  # Host DB bridge deployment + Watchtower auto-updater
+│   ├── .env.example                       # Production environment & database secrets template
+│   └── README.md                          # Comprehensive CI/CD and deployment tutorial
+│
+├── 🐙 .github/workflows/           # GITHUB ACTIONS CI/CD AUTOMATION
+│   └── docker-ci-cd.yml             # Automatic build, GHCR publish, and semver tag on push
+│
 ├── 🎨 docker_explained.html        # 27-SLIDE VISUAL MASTERCLASS DECK (Interactive Presentation)
 ├── ⚡ manual-exe.html               # INTERACTIVE PRODUCTION RUNBOOK (SOP Checklist)
 │
 ├── 📜 LICENSE                      # MIT Open Source License (Adarsh Gandla)
-├── 🏷️ VERSION                      # Release version tracker (1.0.0)
+├── 🏷️ VERSION                      # Release version tracker (1.2.0)
 │
 └── 📚 docs/                         # REFERENCE MANUALS & SPECIFICATIONS
     ├── docker-masterclass.md        # Comprehensive technical manual
     ├── docker-pattern-library.md    # 15 battle-tested production Docker patterns
-    └── taskflow-walkthrough.md      # End-to-end implementation walkthrough
+    ├── taskflow-walkthrough.md      # End-to-end implementation walkthrough
+    └── ci-cd-automation.md          # Complete CI/CD & Watchtower Continuous Deployment guide
 ```
 
 ---
@@ -187,9 +199,14 @@ Open these files in any modern web browser for immediate interactive training:
 
 ## 🛡️ Enterprise Production Standards Enforced
 
-1. **Non-Root Execution (SOC 2 & CIS Benchmark 4.1 Compliance)**
+1. **Non-Root Execution (SOC 2, CIS Benchmark 4.1 & Kubernetes `runAsNonRoot` Compliance)**
    * Avoids running containers as default `root (UID 0)`.
-   * Creates isolated unprivileged system user `nodejs / appuser (UID 1001)` to eliminate container breakout risks upon Remote Code Execution (RCE).
+   * Enforces **numeric UID/GID context (`USER 1001:1001`)** rather than string names (`USER appuser`) so Kubernetes admission controllers and OCI runtimes verify non-root compliance directly from image manifests without inspecting `/etc/passwd`.
+   * **Multi-Distribution Syntax Standard**:
+     * **Alpine (BusyBox)**: `RUN addgroup -g 1001 -S appgroup && adduser -S -u 1001 -G appgroup appuser`
+     * **Ubuntu / Debian**: `RUN groupadd -g 1001 appgroup && useradd -r -u 1001 -g appgroup appuser`
+     * **RedHat / Rocky**: `RUN groupadd -g 1001 appgroup && useradd -r -u 1001 -g appgroup appuser`
+   * Safely pre-provisions write permissions for runtime disks (e.g. SQLite `/data` via `chown -R 1001:1001 /data`).
 
 2. **Cross-Architecture Multi-Platform Builds (`docker buildx`)**
    * Eliminates the `exec format error` crash between Apple Silicon (`ARM64`) laptops and Cloud (`AMD64 / x86_64`) servers.
@@ -213,11 +230,11 @@ cd 01-single-container
 # Build the unified image
 docker build -t taskflow-single .
 
-# Run with persistent volume
-docker run -d -p 4000:4000 -v taskflow_data:/data --name taskflow_app taskflow-single
+# Run with persistent volume (Port 5000 on host)
+docker run -d -p 5000:4000 -v taskflow_data:/data --name taskflow_app taskflow-single
 
 # Access in browser
-# http://localhost:4000
+# http://localhost:5000
 ```
 
 ### Option B: Running the Multi-Container Microservices Stack
@@ -233,10 +250,40 @@ docker compose up --build
 # Healthcheck: http://localhost:4000/api/health
 ```
 
+### Option C: Running the Host Database Bridge Stack
+```bash
+cd 03-host-database-mysql
+
+# Run the host bridge container (connects to host MySQL via host.docker.internal:3306)
+docker compose up --build -d
+
+# Access in browser
+# Frontend & API: http://localhost:4001
+```
+
+### Option D: Automated CI/CD Continuous Deployment (with Watchtower)
+```bash
+cd 04-cicd-automation
+
+# Copy credentials template (only needed for host DB bridge or custom secrets)
+cp .env.example .env
+
+# Launch single-container, microservices, or host-db deployment:
+docker compose -f docker-compose.single-deploy.yml up -d
+# OR
+docker compose -f docker-compose.multi-deploy.yml up -d
+# OR
+docker compose -f docker-compose.host-db-deploy.yml up -d
+
+# View automated update logs
+docker logs -f taskflow_watchtower
+```
+
 ---
 
 ## 📖 Deep-Dive Reference Guides
 
+* **[Automated CI/CD & Continuous Deployment Guide](./docs/ci-cd-automation.md)** — GitHub Actions, GHCR packages, and Watchtower auto-deployments.
 * **[Comprehensive Docker Masterclass](./docs/docker-masterclass.md)** — Architectural principles, container lifecycles, and debugging cheat sheets.
 * **[15 Production Docker Patterns](./docs/docker-pattern-library.md)** — Battle-tested recipes including Multi-Stage builds, Nginx SPAs, and Redis caching.
 * **[TaskFlow Implementation Walkthrough](./docs/taskflow-walkthrough.md)** — Complete step-by-step creation notes from scratch.

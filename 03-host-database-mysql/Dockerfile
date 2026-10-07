@@ -38,13 +38,15 @@ COPY package*.json ./
 RUN npm install --omit=dev
 
 # Copy backend source code
-COPY --chown=appuser:appgroup src/ ./src/
+COPY --chown=1001:1001 src/ ./src/
 
 # Copy compiled frontend SPA from Stage 1 into static public directory
-COPY --from=frontend-builder --chown=appuser:appgroup /app/frontend/dist ./public/
+COPY --from=frontend-builder --chown=1001:1001 /app/frontend/dist ./public/
 
-# Drop privileges to non-root user
-USER appuser
+# 🔒 DROP ROOT PRIVILEGES (SOC 2 & Kubernetes runAsNonRoot Compliance):
+# Using numeric UID:GID (1001:1001) guarantees Kubernetes admission controllers
+# pass static manifest inspection without needing to resolve names against /etc/passwd.
+USER 1001:1001
 
 # Expose Track 3 port (4001 to avoid colliding with 4000 and 5000)
 EXPOSE 4001

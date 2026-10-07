@@ -1,0 +1,37 @@
+# ==============================================================================
+# 📦 TRACK 4: OPTION A — SINGLE-CONTAINER CONTINUOUS DEPLOYMENT (WATCHTOWER)
+# ==============================================================================
+# Automatically pulls the latest published image from GitHub Container Registry (GHCR)
+# and triggers zero-downtime rolling restarts whenever a commit lands on 'main'.
+# ==============================================================================
+
+services:
+  app:
+    image: ghcr.io/adarshgandla/docker-e2e-single:latest
+    container_name: taskflow_prod_single
+    restart: unless-stopped
+    ports:
+      - "5000:4000"
+    volumes:
+      - taskflow_prod_data:/data
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: taskflow_watchtower_single
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WATCHTOWER_POLL_INTERVAL=60
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_LABEL_ENABLE=true
+      - WATCHTOWER_INCLUDE_RESTARTING=true
+
+volumes:
+  taskflow_prod_data:
+    name: taskflow_prod_data

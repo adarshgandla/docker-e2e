@@ -73,10 +73,12 @@ COPY package*.json ./
 RUN npm install --omit=dev
 
 # Copy application source code and explicitly assign ownership to unprivileged user
-COPY --chown=nodejs:nodejs . .
+COPY --chown=1001:1001 . .
 
-# 🔒 DROP ROOT PRIVILEGES: Switch execution context from root (0) to nodejs (1001)
-USER nodejs
+# 🔒 DROP ROOT PRIVILEGES (SOC 2 & Kubernetes runAsNonRoot Compliance):
+# Using numeric UID:GID (1001:1001) guarantees Kubernetes admission controllers
+# pass static manifest inspection without needing to resolve names against /etc/passwd.
+USER 1001:1001
 
 EXPOSE 4000
 

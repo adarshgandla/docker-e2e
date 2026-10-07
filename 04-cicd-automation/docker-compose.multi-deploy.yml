@@ -1,0 +1,103 @@
+# ==============================================================================
+# 🏗️ TRACK 4: OPTION B — DECOUPLED MICROSERVICES CONTINUOUS DEPLOYMENT
+# ==============================================================================
+# Stateless services (API & Frontend) pull automatically from GHCR.
+# Stateful databases (PostgreSQL & Redis) run with volume persistence.
+# Watchtower only restarts API & Frontend when new code is pushed!
+# ==============================================================================
+
+services:
+  # ----------------------------------------------------------------------------
+  # 1. PostgreSQL 16 Relational Database (Persistent Volume)
+  # ----------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: taskflow_prod_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-taskflow}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-taskflow_secure_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-taskflow}
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+    networks:
+      - prod-network
+    # Exclude database from Watchtower restarts to protect active transactions
+    labels:
+      - "com.centurylinklabs.watchtower.enable=false"
+
+  # ----------------------------------------------------------------------------
+  # 2. Redis 7 In-Memory Cache
+  # ----------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: taskflow_prod_redis
+    restart: unless-stopped
+    volumes:
+      - redis_prod_data:/data
+    networks:
+      - prod-network
+    labels:
+      - "com.centurylinklabs.watchtower.enable=false"
+
+  # ----------------------------------------------------------------------------
+  # 3. Express REST API (Pulls from GHCR & Auto-Updated by Watchtower)
+  # ----------------------------------------------------------------------------
+  api:
+    image: ghcr.io/adarshgandla/docker-e2e-api:latest
+    container_name: taskflow_prod_api
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - redis
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-taskflow}:${POSTGRES_PASSWORD:-taskflow_secure_pass}@postgres:5432/${POSTGRES_DB:-taskflow}
+      - REDIS_URL=redis://redis:6379
+    networks:
+      - prod-network
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+
+  # ----------------------------------------------------------------------------
+  # 4. Frontend Nginx (Pulls from GHCR & Auto-Updated by Watchtower)
+  # ----------------------------------------------------------------------------
+  frontend:
+    image: ghcr.io/adarshgandla/docker-e2e-frontend:latest
+    container_name: taskflow_prod_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    networks:
+      - prod-network
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+
+  # ----------------------------------------------------------------------------
+  # 5. Watchtower Daemon (Continuous Deployment Agent)
+  # ----------------------------------------------------------------------------
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: taskflow_watchtower_multi
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WATCHTOWER_POLL_INTERVAL=60
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_LABEL_ENABLE=true
+      - WATCHTOWER_INCLUDE_RESTARTING=true
+
+networks:
+  prod-network:
+    name: taskflow_prod_network
+    driver: bridge
+
+volumes:
+  postgres_prod_data:
+    name: postgres_prod_data
+  redis_prod_data:
+    name: redis_prod_data
