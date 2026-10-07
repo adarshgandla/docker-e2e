@@ -56,6 +56,7 @@ docker-e2e/
 ├── 🎨 docker_explained.html        # 27-SLIDE VISUAL MASTERCLASS DECK (Interactive Presentation)
 ├── ⚡ manual-exe.html               # INTERACTIVE PRODUCTION RUNBOOK (SOP Checklist)
 ├── 🖼️ imgs.md                     # COMPLETE VISUAL SLIDES DECK (7 Diagrams + Speaker Notes)
+├── 💻 commands.md                 # COMMON DOCKER COMMANDS (Natural CLI Reference Manual)
 │
 ├── 📜 LICENSE                      # MIT Open Source License (Adarsh Gandla)
 ├── 🏷️ VERSION                      # Release version tracker (1.2.0)
