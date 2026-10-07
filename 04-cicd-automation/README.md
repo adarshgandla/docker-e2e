@@ -61,20 +61,86 @@ docker compose -f docker-compose.host-db-deploy.yml up -d
 
 ---
 
-## 🤖 Observing Automated Updates with Watchtower
+## 🚀 Hands-On Live Walkthrough: From Editor Edit to Automated Deployment
 
-Watchtower checks GitHub Container Registry every 60 seconds:
-```bash
-docker logs -f taskflow_watchtower_multi
+This step-by-step tutorial walks new users and learners through the entire continuous deployment loop in real time:
+
+```text
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                               THE LIVE DEMO LOOP                                       │
+│                                                                                        │
+│   [1. VS Code Edit] ──> [2. Git Push main] ──> [3. GitHub Actions CI] ──> [4. GHCR]    │
+│                                                                               │        │
+│   [6. Live Browser F5] <── [5. Running Container Replaced] <── [Watchtower Polls] ◄───┘│
+└────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-When you merge a PR or push a commit to `main`:
-1. GitHub Actions finishes building the new image.
-2. Watchtower log displays:
-   ```text
-   Found new ghcr.io/adarshgandla/docker-e2e-api:latest image
-   Stopping /taskflow_prod_api (SIGTERM)...
-   Creating /taskflow_prod_api with new image...
-   Removing old image...
-   ```
-3. Your application is live with the new code—with zero manual commands!
+### Step 0: Free Up Port 5000 (If Running Track 1)
+If you previously ran Track 1 on port 5000, stop it so the production container can bind to the port:
+```bash
+docker stop taskflow-single-app
+```
+
+### Step 1: Start the Production Stack with Watchtower
+Launch the single-container production deployment:
+```bash
+cd 04-cicd-automation
+docker compose -f docker-compose.single-deploy.yml up -d
+```
+* **Verify in browser**: Open `http://localhost:5000` to see the currently running application.
+
+### Step 2: Stream Watchtower Logs in a Terminal
+In a split terminal window, watch Watchtower monitor GitHub Container Registry in real time:
+```bash
+docker logs -f taskflow_watchtower_single
+```
+
+### Step 3: Make a Code Edit in Your Editor
+Open `01-single-container/frontend/src/App.jsx` in VS Code and modify a visible UI element (e.g., around line 45):
+```jsx
+// Change this line:
+<h1>TaskFlow</h1>
+
+// To:
+<h1>TaskFlow 🚀 [v1.2.1 Live Auto-Deploy Demo]</h1>
+```
+Save the file.
+
+### Step 4: Commit and Push to Git (`main`)
+Push your change to the repository `main` branch to trigger the CI/CD pipeline:
+```bash
+git add 01-single-container/frontend/src/App.jsx
+git commit -m "feat(ui): update title for live auto-deploy demo"
+git push origin dev
+git checkout main
+git merge dev
+git push origin main
+git checkout dev
+```
+
+### Step 5: Observe GitHub Actions Building
+Open your repository's GitHub Actions page in your browser:
+* **Workflow**: `🐳 Docker CI/CD — Build, Test & Auto-Deploy`
+* **Job**: `📦 Build & Publish Single Container`
+* GitHub Actions compiles the Vite frontend, packages the Alpine runtime, and pushes the new image tag `:latest` to `ghcr.io`.
+
+### Step 6: Watchtower Detects and Updates the Container Automatically
+Watch your terminal from Step 2. Within 30 seconds of the GitHub Action completing, Watchtower detects the new image digest:
+```text
+Found new ghcr.io/adarshgandla/docker-e2e-single:latest image
+Stopping /taskflow_prod_single (SIGTERM)...
+Creating /taskflow_prod_single with new image...
+Removing old image...
+```
+
+Refresh your browser at `http://localhost:5000` (`F5`):
+**Your new code is live without ever touching the server or running manual `docker` commands!**
+
+---
+
+### 🎙️ The 20-Second Takeaway for Your Team
+> *"Notice what just happened:*  
+> *1. We never touched the production server.*  
+> *2. We never typed `docker build` or `docker pull` manually.*  
+> *3. We never restarted the container by hand.*  
+> *All we did was push code to GitHub. CI built an immutable Docker image, and Watchtower updated our production container with zero downtime and zero human intervention."*
