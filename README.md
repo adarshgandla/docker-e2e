@@ -1,6 +1,6 @@
 # 🐳 The Production Docker Masterclass & Architecture Curriculum
 
-[![Version](https://img.shields.io/badge/version-1.0.1-blue.svg)](./VERSION)
+[![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](./VERSION)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![Docker](https://img.shields.io/badge/docker-ready-2496ED.svg?logo=docker&logoColor=white)](https://www.docker.com/)
 [![Node.js](https://img.shields.io/badge/node.js-v20-green.svg?logo=node.js)](https://nodejs.org/)
@@ -70,6 +70,12 @@ docker-e2e/
 > [!NOTE]
 > **Architectural Philosophy Note**:
 > While bundling frontend, API, and embedded database into a single container (**Track 1**) is efficient for rapid prototyping and offline edge nodes, it diverges from Docker's core **"one process per container"** philosophy. For horizontally scalable enterprise systems, decoupling services (**Track 2**) is the standard practice.
+
+> [!TIP]
+> **🔌 Why does Track 1 have only ONE port (5000)? Where are the frontend and database ports?**
+> * **Frontend**: Pre-compiled into static assets at build time; Express serves them directly via `express.static('public')` at `http://localhost:5000/`.
+> * **REST API**: Served by Express routes on `/api/*` on that identical port `5000` (completely eliminating Cross-Origin CORS headaches!).
+> * **Database (SQLite)**: An **embedded in-process C library** reading and writing directly to disk (`/data/tasks.db`). It is **serverless and has NO network port**, meaning zero open ports, zero network latency, and zero network attack surface!
 
 ---
 

@@ -9,27 +9,28 @@ Welcome to the **Single-Container Architecture** module of the Docker Curriculum
 ```
                       +------------------------------------------+
                       |         Host Browser (Client)            |
-                      |         http://localhost:4000            |
+                      |         http://localhost:5000            |
                       +--------------------+---------------------+
                                            |
-                                           v  [Port 4000]
+                                           v  [Port Mapping: 5000:4000]
 +----------------------------------------------------------------------------------------+
 | 🐳 SINGLE DOCKER CONTAINER (taskflow-single)                                           |
 |                                                                                        |
 |   +--------------------------------------------------------------------------------+   |
-|   |                      Express Node.js Server (PID 1)                            |   |
-|   |                                                                                |   |
-|   |   +------------------------------------+   +-------------------------------+   |   |
-|   |   |    Static File Host (/*)           |   |   REST API Router (/api/*)    |   |   |
-|   |   |    Serves compiled React SPA       |   |   GET/POST/PATCH /api/tasks   |   |   |
-|   |   |    from /app/public/index.html     |   |   GET /api/health             |   |   |
-|   |   +------------------------------------+   +---------------+---------------+   |   |
+|   │                      Express Node.js Server (PID 1)                            │   |
+|   │                                                                                │   │
+|   │   +------------------------------------+   +-------------------------------+   │   │
+|   │   │    Static File Host (/*)           │   │   REST API Router (/api/*)    │   │   │
+|   │   │    Serves compiled React SPA       │   │   GET/POST/PATCH /api/tasks   │   │   │
+|   │   │    from /app/public/index.html     │   │   GET /api/health             │   │   │
+|   │   +------------------------------------+   +---------------+---------------+   │   │
 |   +------------------------------------------------------------|-------------------+   |
 |                                                                |                       |
-|                                                                v (Reads & Writes)      |
+|                                                                v (In-Process C-Driver) |
 |                                                +-------------------------------+       |
 |                                                |   Embedded SQLite Database    |       |
 |                                                |   File: /data/tasks.db        |       |
+|                                                |   (NO NETWORK PORT NEEDED!)   |       |
 |                                                +---------------+---------------+       |
 +----------------------------------------------------------------|-----------------------+
                                                                  |
@@ -39,6 +40,48 @@ Welcome to the **Single-Container Architecture** module of the Docker Curriculum
                                                       |   (Docker Volume)  |
                                                       +--------------------+
 ```
+
+---
+
+## 🔌 The Single Port Mystery: How Frontend, API, and Database Share Port 5000
+
+A frequent question from developers inspecting this single container is:
+> *"If we only map port 5000 (`-p 5000:4000`), which component gets this port? And where are the ports for the React frontend and the SQLite database?"*
+
+Here is the exact architectural answer:
+
+### 1. 🌐 The Single Port Belongs Exclusively to the Express Server
+* When Docker maps `-p 5000:4000`, the **only process listening on a TCP socket is Node.js Express** (running on internal port 4000).
+* Express acts as the single unified gateway for **both** the user interface and backend API routes.
+
+### 2. 🎨 What About the Frontend? (Why It Needs No Separate Port)
+* In traditional development, React runs on its own Vite development server on port `3000`.
+* In this production single container, **React is compiled at build time** into static HTML, JavaScript, and CSS files (`dist/`).
+* Express serves these compiled static assets directly using `express.static('/app/public')`.
+* When you open `http://localhost:5000/`, Express responds with `index.html`. No separate frontend server or port is needed!
+
+### 3. ⚡ What About the REST API? (Zero CORS Errors)
+* Express handles the API routes directly on that same port:
+  - `GET http://localhost:5000/api/tasks`
+  - `GET http://localhost:5000/api/health`
+* **Major Advantage:** Because the Frontend and Backend share the exact same origin (`http://localhost:5000`), **Cross-Origin Resource Sharing (CORS) errors are eliminated entirely**!
+
+### 4. 💾 What About the Database? (Why SQLite Has NO Port At All)
+* Traditional databases like **PostgreSQL (5432)**, **MySQL (3306)**, and **MongoDB (27017)** are client-server network daemons that listen on TCP ports.
+* **SQLite is NOT a network server.** It is a **serverless, embedded library** compiled directly into the Node.js runtime (`sqlite3`).
+* It interacts with disk storage at `/data/tasks.db` through in-memory C function calls.
+* **Zero Network Ports Required:**
+  - Uses 0 network ports on the host.
+  - Zero network latency (reads and writes execute at memory and local disk speeds).
+  - Cannot be reached or attacked over the network from the outside!
+
+### 📊 Port Comparison Across All Three Tracks
+
+| Track | Frontend | Backend API | Database | Total Ports |
+| :--- | :--- | :--- | :--- | :--- |
+| **📦 01-Single-Container** | `5000` (Served by Express) | `5000` (`/api/*`) | **None** (Embedded SQLite) | **1 Port** (`5000:4000`) |
+| **🏗️ 02-Multi-Container** | `3000` (Vite / Nginx) | `4000` (Express) | `5432` (Postgres) + `6379` (Redis) | **4 Ports** |
+| **🐬 03-Host-DB Bridge** | `4001` (Served by Express) | `4001` (`/api/*`) | `3306` (Host-native MySQL) | **1 Container Port** (`4001`) |
 
 ---
 
