@@ -27,6 +27,35 @@
 
 ---
 
+## 🔄 The Standard Hands-on Execution Lifecycle
+
+The diagram and terminal slides show the essential end-to-end workflow executed in day-to-day operations:
+
+```bash
+# Step 1: Download the application image from the registry
+docker pull <image-name>
+
+# Step 2: Launch the container in the background (detached) with port forwarding
+docker run -d -p <host-port>:<container-port> <image-name>
+
+# Step 3: Verify the container is actively running
+docker ps
+
+# Step 4: Inspect application startup logs (since detached mode runs silently)
+docker logs <container-id>
+
+# Step 5: Stop the running container gracefully
+docker stop <container-id>
+
+# Step 6: Delete the stopped container
+docker rm <container-id>
+
+# Step 7: Deep clean system to reclaim disk space (stopped containers + unused images)
+docker system prune -a
+```
+
+---
+
 ## 1. Image Operations
 
 ### 1.1 `docker pull <image-name>`
