@@ -40,7 +40,7 @@ docker-e2e/
 │   ├── docker-compose.yml           # extra_hosts bridge & port 4001 configuration
 │   └── README.md                    # Deep-dive host.docker.internal & MySQL permissions guide
 │
-├── 🎨 docker_explained.html        # 26-SLIDE VISUAL MASTERCLASS DECK (Interactive Presentation)
+├── 🎨 docker_explained.html        # 27-SLIDE VISUAL MASTERCLASS DECK (Interactive Presentation)
 ├── ⚡ manual-exe.html               # INTERACTIVE PRODUCTION RUNBOOK (SOP Checklist)
 │
 ├── 📜 LICENSE                      # MIT Open Source License (Adarsh Gandla)
@@ -73,17 +73,76 @@ docker-e2e/
 
 ---
 
+## 🧠 Core DevOps Realities & Architectural Decisions
+
+### 1. 📄 Why `Dockerfile` vs. Why `docker-compose.yml` (or `.yaml`)?
+
+| Question | `Dockerfile` | `docker-compose.yml` / `compose.yaml` |
+| :--- | :--- | :--- |
+| **What does it do?** | Builds a **single container image** | Orchestrates and runs **multiple containers together** |
+| **Scope** | One individual service (e.g., just the Node.js API) | The entire application stack (API + Postgres + Redis + Frontend) |
+| **Format & Nature** | **Imperative recipe** (`FROM`, `RUN`, `COPY`, `EXPOSE`, `CMD`) | **Declarative specification** (`services`, `networks`, `volumes`, `ports`, `restart`) |
+| **Output** | A portable Docker **Image** (`myapp:1.0.0`) | An active **Networked Cluster** of live running containers |
+| **Analogy** | Blueprint for a **single brick** or room | Master architectural plan for the **entire building** |
+
+> **Why `.yml` vs `.yaml`?**
+> They use the **exact same YAML syntax**. The `.yml` extension became popular in early DOS/Windows days due to 3-letter file extension limits (`.htm` vs `.html`). The official YAML standard specifies `.yaml`. Modern Docker Compose v2 treats both **`compose.yaml`**, **`compose.yml`**, and **`docker-compose.yml`** completely interchangeably!
+
+---
+
+### 2. ⚠️ The "One Process per Container" Rule & The Silent Failure Trap
+
+A common question from engineers is: *"Why can't I just run PostgreSQL, Express, and React inside ONE single container using a shell script?"*
+
+While technically possible using background processes (`service postgresql start && node server.js &`), it introduces the **Silent Zombie Failure Trap**:
+
+```text
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│ ❌ MULTI-PROCESS SINGLE CONTAINER (THE ZOMBIE TRAP)                                    │
+│                                                                                        │
+│   PID 1: Foreground Shell Script (/start.sh) ──▶ ALWAYS REPORTED AS HEALTHY            │
+│     ├── PID 15: Background PostgreSQL Daemon                                           │
+│     └── PID 24: Background Node.js Express API  ──💥 (CRASHES / THROWS UNCAUGHT ERROR!) │
+│                                                                                        │
+│   ⚠️ RESULT: PID 1 is still alive! Docker monitors ONLY PID 1.                         │
+│   🚫 Docker DOES NOT KNOW the API crashed!                                             │
+│   🚫 Docker DOES NOT RESTART the container!                                            │
+│   ❌ The container stays Up (healthy) but returns HTTP 502/500 connection errors!      │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+
+                                           VS
+
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│ ✅ DECOUPLED MULTI-CONTAINER ARCHITECTURE (DOCKER COMPOSE)                             │
+│                                                                                        │
+│   Container 1: [task_postgres]  ── PID 1: postgres  ──▶ Running Healthy               │
+│   Container 2: [task_redis]     ── PID 1: redis     ──▶ Running Healthy               │
+│   Container 3: [task_frontend]  ── PID 1: nginx     ──▶ Running Healthy               │
+│   Container 4: [task_api]       ── PID 1: node      ──💥 (CRASHES!)                    │
+│                                                                                        │
+│   ✨ RESULT: Container 4's PID 1 exits immediately with code 1.                        │
+│   🔄 Docker Daemon instantly detects container exit.                                   │
+│   🛡️ Docker auto-restarts ONLY Container 4 within seconds (restart: unless-stopped)!    │
+│   ✅ Database, cache, and frontend remain completely online and untouched!             │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+* **In Track 1 (`01-single-container/`)**: We achieve single-container stability safely **not** by launching multiple broken daemons, but by compiling the React SPA into static assets and letting the Express server serve both the frontend and an embedded SQLite database as **strictly ONE process (PID 1)**.
+* **In Track 2 (`02-multi-container/`)**: Every service runs isolated in its own container with automatic restart policies and dedicated health checks.
+
 ## 🖥️ Interactive Presentation & Workbench Tools
 
 Open these files in any modern web browser for immediate interactive training:
 
 ### 1. 🎨 [Visual Masterclass Slide Deck (`docker_explained.html`)](./docker_explained.html)
-* **26 Interactive Slides** covering:
+* **27 Interactive Slides** covering:
   * Linux Namespaces, Cgroups, and Host Kernel sharing
   * Virtual Machines vs Containers
   * Layer Caching mechanics and Build Engine internals
   * The 3 Storage Types: Bind Mounts, Named Volumes, Anonymous Volumes
   * Container Networking and Virtual Bridge DNS
+  * `Dockerfile` vs `docker-compose.yml` (`compose.yaml`) & `.yml` vs `.yaml` conventions
+  * **Process Lifecycle & Resilience**: The Single-Container Multi-Process Failure Trap vs Compose Auto-Recovery
   * `npm install` vs `npm ci` in CI/CD pipelines
   * **Module 11 (Enterprise Hardening)**: Non-root execution (UID 1001), `docker buildx` cross-compilation, and OOM Killer Exit Code 137 governance.
 * **Navigation**: Use keyboard Left/Right Arrow keys, or click the Table of Contents drawer.

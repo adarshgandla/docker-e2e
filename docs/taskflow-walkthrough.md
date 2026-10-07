@@ -134,8 +134,11 @@ In `01-single-container/Dockerfile`:
 3. **Data Persistence**: Mounts `/data` as a Docker volume. SQLite database `/data/tasks.db` persists across container restarts, image updates, and rebuilds.
 
 > [!CAUTION]
-> **Architectural Philosophy Note**:
-> Bundling frontend, API, and embedded database into a single container goes against Docker’s core **"one process per container"** philosophy. While ideal for offline demos, rapid prototypes, and lightweight edge devices, enterprise workloads should decouple services into independent containers (**Track 2**) for horizontal scalability and fault isolation.
+> **Architectural Reality Check: The "One Process per Container" Philosophy & The Silent Crash Trap**:
+> Bundling frontend, API, and an external database daemon into a single container using a shell script (`start.sh`) goes against Docker’s core design philosophy:
+> - **The Silent Failure Flaw**: Docker monitors only the root process (**PID 1**). If a backgrounded service (e.g. database or Node.js) crashes in a multi-process container, PID 1 stays alive. **Docker never knows the service died and will NOT restart the container automatically**, turning the container into an unresponsive "zombie".
+> - **How Track 1 Solves It**: Instead of running multiple daemons, Track 1 compiles React into static assets and lets Express run as **strictly ONE process (PID 1)** serving the frontend, API, and embedded SQLite. If Express dies, the container exits immediately and restarts cleanly.
+> - **How Track 2 Solves It**: Every component (PostgreSQL, Redis, Express, Nginx) runs as its own container with `restart: unless-stopped`. If one service crashes, Docker automatically restarts that container within seconds without disturbing other running services.
 
 ---
 

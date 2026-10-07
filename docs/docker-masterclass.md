@@ -350,6 +350,40 @@ volumes:
 
 With this one file, `docker compose up` starts all 4 services, in the right order, connected to each other.
 
+### Why Dockerfile vs. Why docker-compose.yml (or .yaml)?
+
+A common point of confusion for beginners is understanding why we need both a `Dockerfile` and a `docker-compose.yml`:
+
+| Aspect | `Dockerfile` | `docker-compose.yml` / `compose.yaml` |
+| :--- | :--- | :--- |
+| **Primary Job** | Builds a **single image** | Runs and connects **multiple containers** |
+| **Input / Output** | Source code ➔ Docker Image | Docker Images ➔ Running Application Stack |
+| **Focus** | Internal OS packages, dependencies, build steps | External networking, port bindings, volumes, environment |
+| **Command** | `docker build` | `docker compose up` |
+
+> **What is the difference between `.yml` and `.yaml`?**  
+> There is **zero functional difference**; both represent standard YAML format. Historically, early operating systems (like MS-DOS and Windows 95) enforced three-letter file extensions (like `.htm` instead of `.html`, and `.yml` instead of `.yaml`). The official specification uses `.yaml`. Modern Docker Compose v2 seamlessly recognizes `compose.yaml`, `compose.yml`, `docker-compose.yaml`, and `docker-compose.yml`.
+
+### The "One Process per Container" Principle & The Silent Crash Trap
+
+Docker was architected from day one around the Unix philosophy: **"One process per container"**.
+
+#### The Problem: What happens if you run multiple processes in ONE container?
+If you write a shell script (`start.sh`) that starts PostgreSQL in the background and Node.js in the foreground:
+1. **Docker watches ONLY the foreground process (PID 1)**.
+2. If the background process (PostgreSQL) crashes, **PID 1 is still alive and running**.
+3. **Docker has no idea the database died!**
+4. Docker **does NOT restart the container automatically** (even if `--restart always` is enabled), because from Docker's perspective, the container never exited.
+5. The container becomes a **silent zombie**: it shows as `Up`, but user requests fail with database connection errors.
+
+#### The Solution: Decoupled Containers (Docker Compose)
+When each process runs in its own dedicated container:
+1. That process **is** PID 1 of its container.
+2. If the process crashes or encounters an Out-Of-Memory (OOM) error, the container **immediately exits**.
+3. Docker detects the exit code and applies your restart policy (`restart: unless-stopped` or `restart: on-failure`).
+4. **Docker automatically restarts that specific failed container within seconds!**
+5. All sibling containers (the database, Redis cache, and reverse proxy) continue running completely undisturbed.
+
 ### How Containers Talk to Each Other
 
 In Docker Compose, containers can **resolve each other by service name**:

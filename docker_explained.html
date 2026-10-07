@@ -1068,6 +1068,9 @@ build
           <strong>Why third?</strong> You cannot compose what does not exist yet!<br>
           Now that your custom app has a <code>Dockerfile</code>, Compose references it with <code>build: ./backend</code> and wires it to databases (<code>postgres:16</code>), caches (<code>redis:7</code>), and networks.
         </p>
+        <div style="margin-top:6px;font-size:11.5px;color:var(--text-muted);background:rgba(255,255,255,0.03);padding:6px 10px;border-radius:6px;">
+          💡 <strong>Why .yml vs .yaml?</strong> Zero difference! <code>.yml</code> is a historic 3-letter Windows legacy; <code>.yaml</code> is official RFC. Docker Compose v2 recognizes both <code>compose.yaml</code> and <code>docker-compose.yml</code> identically.
+        </div>
       </div>
 
       <div class="content-box">
@@ -1192,6 +1195,54 @@ build
           </tr>
         </tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- ==================== SLIDE: THE PROCESS FAILURE TRAP ==================== -->
+  <div class="slide">
+    <span class="module-badge">Module 06: Process Lifecycle &amp; Resilience</span>
+    <h1 class="slide-title">The Multi-Process Failure Trap: Single vs Decoupled Recovery</h1>
+    <p class="slide-subtitle">Why running multiple background processes in one container prevents automatic restarts, and how Docker Compose fixes it.</p>
+
+    <div class="grid-2">
+      <div class="content-box" style="border-left: 4px solid var(--danger);">
+        <h4 style="color:var(--danger);margin-bottom:8px">❌ Single Container Multi-Process (The Silent Zombie Trap)</h4>
+        <p style="font-size:13px;color:var(--text-muted);line-height:1.6">
+          When running a shell script (<code>start.sh</code>) that starts DB in background and API in foreground:
+        </p>
+        <div style="background:#0a0d16;padding:12px;border-radius:8px;font-family:monospace;font-size:12px;color:var(--text-muted);margin:10px 0;line-height:1.6;">
+          PID 1: /start.sh ──▶ <span style="color:var(--success);">ALIVE</span><br>
+          &nbsp;&nbsp;├── PID 12: PostgreSQL ──▶ <span style="color:var(--success);">ALIVE</span><br>
+          &nbsp;&nbsp;└── PID 25: Node API ──💥 <span style="color:var(--danger);font-weight:bold;">CRASHED (Exit 1)</span>
+        </div>
+        <p style="font-size:12.5px;color:var(--text-muted);line-height:1.5;">
+          ⚠️ <strong>Docker watches ONLY PID 1!</strong> Because PID 1 (the shell script) is still running, Docker assumes the entire container is 100% healthy.<br>
+          🚫 <strong>No Auto-Restart:</strong> Docker will <strong>never</strong> restart the container, even with <code>--restart unless-stopped</code>.<br>
+          💀 <strong>Zombie State:</strong> The container remains <code>Up</code>, but client requests fail with <code>502 Bad Gateway</code> or connection errors indefinitely!
+        </p>
+      </div>
+
+      <div class="content-box" style="border-left: 4px solid var(--success);">
+        <h4 style="color:var(--success);margin-bottom:8px">✅ Decoupled Microservices (Docker Compose Auto-Healing)</h4>
+        <p style="font-size:13px;color:var(--text-muted);line-height:1.6">
+          When each service runs in its own dedicated container under Docker Compose:
+        </p>
+        <div style="background:#0a0d16;padding:12px;border-radius:8px;font-family:monospace;font-size:12px;color:var(--text-muted);margin:10px 0;line-height:1.6;">
+          [task_postgres]  ── PID 1: postgres  ──▶ <span style="color:var(--success);">ALIVE</span><br>
+          [task_redis]     ── PID 1: redis     ──▶ <span style="color:var(--success);">ALIVE</span><br>
+          [task_frontend]  ── PID 1: nginx     ──▶ <span style="color:var(--success);">ALIVE</span><br>
+          [task_api]       ── PID 1: node      ──💥 <span style="color:var(--danger);font-weight:bold;">CRASHED!</span>
+        </div>
+        <p style="font-size:12.5px;color:var(--text-muted);line-height:1.5;">
+          ✨ <strong>Immediate Detection:</strong> The container's PID 1 exits immediately with a failure code.<br>
+          🔄 <strong>Instant Self-Healing:</strong> With <code>restart: unless-stopped</code>, Docker daemon automatically restarts <strong>only task_api</strong> within seconds!<br>
+          🛡️ <strong>Zero Sibling Impact:</strong> PostgreSQL, Redis, and frontend remain unaffected, preserving database transactions and cached memory.
+        </p>
+      </div>
+    </div>
+
+    <div class="callout warning">
+      🎯 <strong>The Golden Architecture Rule:</strong> "One process per container" is not just dogma—it is the foundational requirement for Docker's automatic health monitoring, restart policies, and fault isolation to function.
     </div>
   </div>
 

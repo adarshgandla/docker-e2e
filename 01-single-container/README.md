@@ -107,13 +107,25 @@ CMD ["/start.sh"]
 ```
 
 > [!WARNING]
-> **Caveat with Shell Scripts**: If a backgrounded process (`node ... &`) crashes, the shell script won't detect it, leaving the container running in a corrupted zombie state. It also often fails to forward `SIGTERM` signals properly during container shutdowns.
+> ### 💥 The "Silent Zombie" Trap: Why Docker Cannot Auto-Restart Crashed Background Daemons
+> When using a shell script (`start.sh`) with backgrounded processes:
+> 1. **Docker Monitors ONLY PID 1**: Docker’s lifecycle engine only tracks the single process invoked by `CMD` (the shell script or the foreground command).
+> 2. **Silent Background Deaths**: If the backend API (`node server.js &`) crashes due to an uncaught exception or out-of-memory error, **PID 1 never exits** because the shell script or foreground web server is still running.
+> 3. **No Automatic Restart**: Even if you started your container with `--restart unless-stopped` or `--restart always`, **Docker will NEVER restart the container** because from Docker's perspective, PID 1 is alive and healthy!
+> 4. **Zombie State**: Your container becomes a "zombie" — Docker reports `STATUS: Up`, but client requests to the API fail with `502 Bad Gateway` or `Connection Refused` indefinitely without recovery.
+> 5. **Broken Signals**: A plain shell script does not forward `SIGTERM` signals, causing Docker to wait 10 seconds and forcefully kill (`SIGKILL`) the container during shutdowns.
+> 
+> *In contrast, in a decoupled architecture (**02-multi-container/**), each service is PID 1 of its own container. If the API crashes, Docker immediately catches the exit code and restarts that container in seconds without touching the database!*
 
 ### Approach B: Process Supervisors (`supervisord` / `tini`)
-For robust multi-process management, production teams use **Supervisor** (`supervisord`), which monitors child processes, restarts them on failure, and forwards OS termination signals.
+If you are strictly forced to run multiple daemons in one container, you should never use raw shell scripts; you must install a process supervisor like **Supervisor** (`supervisord`) or **S6-overlay**, which monitors child process health, automatically restarts dead child processes internally, and forwards OS termination signals.
 
 ### Approach C: The Unified Monolith Pattern (What Track 1 Implements)
-Instead of running multiple daemons, compile the React SPA into static HTML/JS/CSS assets and have the Node.js Express server serve both the API routes (`/api/*`) and the static frontend (`express.static('public')`), using an embedded SQLite database (`sqlite3`). **This keeps the container strictly at ONE process (PID 1)!**
+Rather than fighting multi-process supervisor complexity, Track 1 implements the **cleanest single-container pattern**:
+- Compile the React SPA into static HTML/CSS/JS assets during the build stage.
+- Have the Node.js Express server serve both the REST API (`/api/*`) and the static frontend (`express.static('public')`).
+- Use an embedded SQLite database (`sqlite3`) that runs inside the Node.js process memory.
+- **Result**: The container runs **strictly ONE process (PID 1)**. If Express crashes, the container cleanly exits, allowing Docker’s `--restart` policy to kick in and restart it immediately!
 
 ---
 

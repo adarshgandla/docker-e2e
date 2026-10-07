@@ -73,6 +73,13 @@ Welcome to the **Multi-Container Microservices Architecture** of the Docker Curr
 * **Resource Ceilings**: Enforces `memory: 512M` and `cpus: '0.50'` to protect the host against runaway queries and the **Linux OOM Killer (Exit Code 137)**.
 * **Graceful Termination**: Sets `stop_grace_period: 15s`. When containers stop, Express catches `SIGTERM` to drain active user HTTP connections and safely close database pools before terminating.
 
+### 5. Failure Isolation & Automatic Self-Healing (Why Decoupled Containers Win)
+* **Dedicated PID 1 per Service**: In Docker Compose, each service runs in its own container as **PID 1**.
+* **Automatic Crash Recovery**: If `task_api` experiences an unhandled promise rejection, memory leak, or crash, its container terminates immediately.
+* **Instant Auto-Restart**: When configured with `restart: unless-stopped` or `restart: on-failure`, Docker daemon detects the container exit and **restarts only `task_api` within seconds**.
+* **Zero Disruption to Siblings**: The `postgres`, `redis`, and `frontend` containers continue operating normally. Database data and Redis cache keys remain intact.
+* **The Single-Container Multi-Process Contrast**: In a single container running multiple services via a script (`start.sh`), if a background daemon crashes, PID 1 remains alive. **Docker never knows the process died and does NOT restart the container**, leaving the app in a broken "zombie" state. Docker Compose completely eliminates this flaw!
+
 ---
 
 ## 🚀 Quick Start Guide
