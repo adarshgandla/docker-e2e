@@ -60,9 +60,15 @@ Welcome to the **Multi-Container Microservices Architecture** of the Docker Curr
 * Containers attached to `app-network` can resolve each other by **service name** (e.g. `postgresql://user:pass@postgres:5432/taskflow`).
 * Containers are completely isolated from unauthorized external network access.
 
-### 2. The 3 Types of Storage Used
-1. **Named Volumes (`postgres_data`, `redis_data`)**: Managed by Docker in the storage pool. Ensures data survives container deletion (`docker compose down`).
-2. **Host Bind Mounts (`./backend:/app`, `./frontend:/app`)**: Enables instantaneous live code editing with Hot Module Replacement (HMR) and `nodemon`.
+### 2. The 3 Types of Storage Used & Deep Dive into `driver: local`
+1. **Named Volumes (`postgres_data`, `redis_data`)**:
+   * **What does `driver: local` mean?** It is Docker's default storage driver. It tells Docker to create the storage space directly on the **local physical host hard drive** where the Docker daemon runs (unlike remote cloud drivers like AWS EBS or NFS).
+   * **Where is data physically stored on disk?**
+     * On Linux servers: `/var/lib/docker/volumes/<volume_name>/_data` (e.g. `/var/lib/docker/volumes/redis_data/_data`)
+     * On Docker Desktop (Windows/macOS): Stored inside the virtual disk image managed by Docker at that same Linux path.
+     * **Verification Command**: Run `docker volume inspect redis_data` to view the exact Mountpoint on your system!
+   * **Persistence**: Running `docker compose down` destroys the containers, but leaves `/var/lib/docker/volumes/...` 100% intact. Only `docker compose down -v` wipes this directory.
+2. **Host Bind Mounts (`./backend:/app`, `./frontend:/app`)**: Enables instantaneous live code editing with Hot Module Replacement (HMR) and `nodemon` by mounting project folders directly from your host laptop into `/app`.
 3. **Anonymous Volumes (`/app/node_modules`)**: Masks host dependencies. Prevents Windows/macOS binaries from overwriting container-compiled Linux modules.
 
 ### 3. Multi-Stage Dockerfile Optimization

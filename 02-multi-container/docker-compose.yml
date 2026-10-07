@@ -30,9 +30,23 @@ networks:
 # ------------------------------------------------------------------------------
 # 💾 VOLUMES
 # ------------------------------------------------------------------------------
-# Named volumes are managed entirely by Docker inside the Docker VM/storage pool.
-# Unlike bind mounts, named volumes are optimized for Linux filesystem I/O performance
-# and ensure database records survive container recreation (docker compose down).
+# Named volumes are managed entirely by Docker inside the host Docker storage pool.
+#
+# 🔍 What does 'driver: local' mean?
+# - 'local' is Docker's default built-in volume driver.
+# - It instructs Docker to allocate persistent storage directly on the LOCAL physical
+#   hard drive of the host machine (unlike cloud/network drivers like AWS EBS or NFS).
+#
+# 📂 Where is data physically stored on disk?
+# - On Linux: '/var/lib/docker/volumes/<volume_name>/_data'
+# - On Docker Desktop (Windows/macOS): Stored inside the Linux VM virtual disk at
+#   '/var/lib/docker/volumes/<volume_name>/_data'.
+#
+# 🛡️ Data Lifecycle:
+# - Running 'docker compose down' stops and removes containers, BUT leaves this
+#   local data directory 100% intact! Next 'docker compose up' reattaches it.
+# - Only running 'docker compose down -v' (with the -v flag) will delete this data.
+# - Inspect anytime using: 'docker volume inspect <volume_name>'
 # ------------------------------------------------------------------------------
 volumes:
   postgres_data:

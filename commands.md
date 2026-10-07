@@ -182,6 +182,37 @@ docker run -d -p 3000:3000 -v app_data:/data --name app-container <image-name>
 * `app_data`: Named Docker volume on the host.
 * `/data`: Directory path inside the container where files are written.
 
+#### 🔍 Deep Dive: Where Does Docker Actually Store This on Disk?
+A common doubt is: *"Where does my data go when I create a volume?"*
+
+* **Volume Driver (`driver: local`)**: By default, Docker creates volumes using the built-in `local` driver, which stores data on the physical host machine's drive (not on remote network shares).
+* **Physical File Path on Disk**:
+  * **On Linux servers**: `/var/lib/docker/volumes/<volume-name>/_data`  
+    *(e.g., `/var/lib/docker/volumes/redis_data/_data` or `/var/lib/docker/volumes/app_data/_data`)*
+  * **On Docker Desktop (Windows/Mac)**: Stored inside the Linux VM virtual drive at that same path.
+* **How to Verify on Your Machine**:
+  ```bash
+  # List all volumes on your system
+  docker volume ls
+
+  # View the exact physical Mountpoint directory on disk
+  docker volume inspect app_data
+  ```
+* **Sample Output of `docker volume inspect`**:
+  ```json
+  [
+      {
+          "CreatedAt": "2026-10-07T10:00:00Z",
+          "Driver": "local",
+          "Labels": null,
+          "Mountpoint": "/var/lib/docker/volumes/app_data/_data",
+          "Name": "app_data",
+          "Options": null,
+          "Scope": "local"
+      }
+  ]
+  ```
+
 ---
 
 ## 3. Container Inspection & Monitoring
