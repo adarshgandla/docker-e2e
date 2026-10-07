@@ -484,36 +484,53 @@ Add `.env` to `.gitignore` immediately.
 
 ---
 
-## Chapter 11 — Why Are Images Needed in the System?
+## Chapter 11 — Enterprise Application Environments & Image Packaging
 
-Here's the real-world reason your system **needs** images:
+### How Docker Packages Applications
+Instead of installing complex programming language runtimes, web servers, and database connectors directly on the host operating system, Docker packages your application code together with its dependencies into a single immutable artifact:
 
-### 1. Reproducibility
-- Same image → same environment → same behavior
-- Dev, staging, production all run the **exact same image**
-- No more "works on my machine"
+<p align="center">
+  <img src="./images/docker-image-packaging.png" alt="Docker Image Packaging Architecture" width="600"/>
+</p>
 
-### 2. Isolation
-- Each service (DB, API, Frontend) runs in its own container
-- They can't interfere with each other
-- You can upgrade PostgreSQL without touching your API
+* **Code + Runtime**: Packages application source code alongside the required runtime stack (e.g. Node.js, Angular, Java, Tomcat, MySQL drivers).
+* **Target Delivery**: The generated image runs identically inside local development containers, test environments, or cloud Kubernetes clusters.
 
-### 3. Scalability
-- Need more API instances? Start 5 containers from the same image
-- Load balancer distributes traffic between them
-- All containers are identical → no configuration drift
+---
 
-### 4. Fast Deployment
-- Your CI/CD pipeline builds the image once
-- The image is pushed to a registry
-- Production servers just `pull` and `run` — no compilation, no install
-- Rollback = run the previous image tag
+### The 5 Enterprise Environments (SDLC Promotion Pipeline)
 
-### 5. Developer Onboarding
-- New developer clones the repo
-- Runs `docker compose up`
-- Entire stack runs in 2 minutes
-- No "install this version of Node, then this database, then configure this..."
+In professional software development, containers are promoted across five structured environments:
+
+<p align="center">
+  <img src="./images/application-environments.png" alt="Application Environments: DEV, SIT, UAT, PILOT, PROD" width="650"/>
+</p>
+
+| Environment | Target Audience | Primary Focus | Docker Strategy |
+|:---|:---|:---|:---|
+| **1) DEV** | Developers | Feature development & integration testing | Run locally with Docker Compose bind mounts (`./src:/app`) and hot-reloading. |
+| **2) SIT** | Testing / QA Team | System Integration Testing across services | CI builds candidate image tags (`:sha-...`) and runs end-to-end integration test suites. |
+| **3) UAT** | Client / Business Users | User Acceptance Testing & sign-off | Client validates business flows against stable containerized release candidate. |
+| **4) PILOT** | SRE / DevOps / Security | Pre-Production dress rehearsal | Exact production replica for load testing, failover checks, and SOC 2 security compliance. |
+| **5) PROD** | Live End Users | High-availability production workloads | Highly available container clusters with zero-downtime rolling updates and monitoring. |
+
+---
+
+### Why Images Are the Foundation of the SDLC
+
+1. **The Golden Rule ("Build Once, Run Everywhere")**:
+   - The image is built **once** in CI (`ghcr.io/repo/app:v1.2.0`).
+   - That **exact same image** is promoted through DEV ➔ SIT ➔ UAT ➔ PILOT ➔ PROD.
+   - Only the `.env` configuration file changes (pointing to DEV DB, SIT DB, or PROD DB).
+2. **Reproducibility**:
+   - Same image → same dependencies → same behavior.
+   - Completely eliminates the "works on my machine" failure mode.
+3. **Isolation & Security**:
+   - Each service (DB, API, Frontend) runs in isolated namespaces.
+   - Non-root `USER 1001:1001` protects the host kernel across all environments.
+4. **Fast Deployment & Instant Rollback**:
+   - Servers simply `pull` and `run` pre-built images with no compile delays.
+   - Rollback is as simple as switching the container tag to the previous image.
 
 ---
 

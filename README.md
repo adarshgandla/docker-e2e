@@ -65,6 +65,41 @@ docker-e2e/
 
 ---
 
+## 🌐 Enterprise Application Environments & Packaging Pipeline
+
+In modern software engineering, software delivery follows a rigorous environment promotion lifecycle to guarantee reliability, security, and zero-downtime releases:
+
+### 1. The Packaging Principle (Code + Runtime Dependencies)
+Instead of installing language runtimes, web servers, and database drivers directly on host operating systems, Docker packages application code together with its exact runtime dependencies into a single immutable artifact:
+
+<p align="center">
+  <img src="./docs/images/docker-image-packaging.png" alt="Docker Image Packaging Architecture" width="650"/>
+</p>
+
+* **Application Code**: Source code, configs, business logic.
+* **Dependencies & Runtimes**: Node.js/Java, web server (Tomcat/Nginx/Express), database drivers (MySQL/PostgreSQL), and Linux OS libraries.
+* **Result**: An immutable, portable **Docker Image** that behaves identically across every environment.
+
+### 2. The 5 Enterprise Application Environments
+
+<p align="center">
+  <img src="./docs/images/application-environments.png" alt="Enterprise Application Environments: DEV, SIT, UAT, PILOT, PROD" width="700"/>
+</p>
+
+| Environment | Primary Users | Purpose & Validation Scope | Docker & CI/CD Strategy |
+|:---|:---|:---|:---|
+| **1) DEV** | Developers | Rapid feature engineering, debugging, and initial integration. | Docker Compose with **bind mounts** (`./src:/app`) and hot-reloading (Vite/Nodemon) for sub-second updates without image rebuilds. |
+| **2) SIT** | Testing Team | **System Integration Testing**: Validates end-to-end communication across microservices, queues, and databases. | Automated CI builds test image tags (`:sha-<hash>`) deployed to isolated testing clusters with automated integration test suites. |
+| **3) UAT** | Client / Business | **User Acceptance Testing**: Business stakeholders test real-world scenarios for contractual sign-off. | Stable release-candidate images running with sanitized real-world seed data for client sign-off. |
+| **4) PILOT** | SRE / DevOps / Security | **Pre-Production Staging**: Exact replica of live production infrastructure (sizing, network, security policies). | Final rehearsals, stress/load testing, non-root UID 1001 security audits, and database migration dry-runs. |
+| **5) PROD** | Live End Users | **Production**: Live business transactions demanding 99.99% uptime and zero data loss. | Immutable, cryptographically verified images from GHCR deployed with rolling updates and Watchtower/Kubernetes monitoring. |
+
+> [!IMPORTANT]
+> **The Docker Golden Rule: "Build Once, Deploy Everywhere"**  
+> Never rebuild an image for each environment! The Docker image is compiled **once** in CI. The exact same immutable binary artifact is promoted through DEV ➔ SIT ➔ UAT ➔ PILOT ➔ PROD. **Only the `.env` configuration file changes** from stage to stage.
+
+---
+
 ## ⚡ The Three Architectural Paths: Which One to Use?
 
 | Architectural Criterion | 📦 01-Single-Container (Monolith) | 🏗️ 02-Multi-Container (Microservices) | 🐬 03-Host-Database-MySQL (Host DB Bridge) |
