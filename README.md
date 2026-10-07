@@ -1,6 +1,6 @@
 # 🐳 The Production Docker Masterclass & Architecture Curriculum
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](./VERSION)
+[![Version](https://img.shields.io/badge/version-1.0.1-blue.svg)](./VERSION)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![Docker](https://img.shields.io/badge/docker-ready-2496ED.svg?logo=docker&logoColor=white)](https://www.docker.com/)
 [![Node.js](https://img.shields.io/badge/node.js-v20-green.svg?logo=node.js)](https://nodejs.org/)
