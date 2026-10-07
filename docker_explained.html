@@ -1242,7 +1242,8 @@ build
     </div>
 
     <div class="callout warning">
-      🎯 <strong>The Golden Architecture Rule:</strong> "One process per container" is not just dogma—it is the foundational requirement for Docker's automatic health monitoring, restart policies, and fault isolation to function.
+      🎯 <strong>The Production Rule:</strong> "One process per container" is the foundation for Docker auto-restarts and failure isolation in production.<br>
+      ⚡ <strong>When IS a Single Container Right?</strong> In early development phases! It is unmatched for <strong>rapid speed checks</strong>, zero-config team onboarding (5-second setup), disposable PR previews, and lightning-fast CI/CD smoke tests using only <strong>~45MB RAM</strong>.
     </div>
   </div>
 

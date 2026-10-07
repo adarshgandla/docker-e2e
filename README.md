@@ -130,6 +130,31 @@ While technically possible using background processes (`service postgresql start
 * **In Track 1 (`01-single-container/`)**: We achieve single-container stability safely **not** by launching multiple broken daemons, but by compiling the React SPA into static assets and letting the Express server serve both the frontend and an embedded SQLite database as **strictly ONE process (PID 1)**.
 * **In Track 2 (`02-multi-container/`)**: Every service runs isolated in its own container with automatic restart policies and dedicated health checks.
 
+---
+
+### 3. 🎯 When is a Single Container Actually the Right Choice? (The Development Speed Reality)
+
+Engineers often ask: *"If multi-container is best for production, why bother with single containers at all?"*
+
+In real-world engineering, a Single Container is an invaluable **speed and velocity multiplier** during specific project phases:
+
+1. **⚡ Zero-Config Developer & QA Onboarding**: Instead of having a new team member configure PostgreSQL credentials, database migration scripts, and Redis caches just to test a frontend component, they run `docker run -p 5000:4000 taskflow-single` and have a working app in **5 seconds**.
+2. **🧪 Lightning-Fast CI/CD Smoke Testing**: Starting a full multi-container stack in GitHub Actions adds minutes to every commit. A single self-contained image boots in milliseconds, executes end-to-end integration tests (Cypress/Playwright), and tears down instantly.
+3. **🔍 Ephemeral PR Preview Deployments**: Spin up disposable preview environments for every pull request at near-zero cloud cost.
+4. **💰 Ultra-Low Memory Overhead**: Track 1 consumes only **~40MB–60MB RAM total**, running easily on a $3.50/month VPS where a multi-container stack (~400MB+ RAM) would exhaust memory.
+5. **✈️ Air-Gapped Offline Demos**: Easily exportable as a standalone `.tar` file (`docker save`) for client presentations without internet or cloud database access.
+
+#### 📈 The Architecture Progression Lifecycle
+
+| Phase | Architecture | Strategic Objective |
+| :--- | :--- | :--- |
+| **Phase 1: Rapid Prototyping & Speed Checks** | 📦 **Single Container** | Zero setup friction, maximum developer velocity. |
+| **Phase 2: CI/CD Automation & PR Reviews** | 📦 **Single Container** | Sub-second pipeline startup, low CI runner cost. |
+| **Phase 3: High-Scale Production SaaS** | 🏗️ **Multi-Container (Compose / K8s)** | Decoupled scaling, process restart isolation, dedicated caching. |
+| **Phase 4: Enterprise System Integration** | 🐬 **Host DB Bridge (Track 3)** | Connect modern microservices to native corporate databases. |
+
+---
+
 ## 🖥️ Interactive Presentation & Workbench Tools
 
 Open these files in any modern web browser for immediate interactive training:

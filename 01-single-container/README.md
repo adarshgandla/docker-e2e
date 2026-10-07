@@ -44,20 +44,32 @@ Welcome to the **Single-Container Architecture** module of the Docker Curriculum
 
 ## 💡 When Should You Use Single-Container Architecture?
 
-In software development, you do not always need 5 separate microservice containers with Redis, RabbitMQ, and PostgreSQL. A Single-Container setup is ideal for:
+In real-world software engineering, you do not always need or want the overhead of 5 orchestrated containers just to test a feature or verify a build. A Single-Container setup is ideal for:
 
-1. **Internal Tools & Admin Portals**: Quick internal dashboards where high traffic concurrency is not needed.
-2. **Edge Computing & IoT Devices**: Deploying to Raspberry Pi, field servers, or factory computers with strict RAM limits.
-3. **Low-Cost Cloud Deployments**: Runs comfortably on a **$3.50/month VPS with only 512MB RAM**!
-4. **Air-Gapped & Offline Deployments**: Ships as a single standalone `.tar` image requiring zero external networks.
-5. **Instant Demos & Proof-of-Concepts**: Give stakeholders or clients one command to run the whole app with zero setup.
+1. **⚡ Rapid Development & Speed Checks**: Instant local verification of UI and backend logic without managing multiple background services, databases, or port conflicts.
+2. **🚀 Zero-Config Developer & QA Onboarding**: Hand a frontend engineer or QA tester a single command (`docker run -p 5000:4000 taskflow-single`) and they have a fully working, populated stack running in **5 seconds**.
+3. **🧪 Lightning-Fast CI/CD Smoke Tests**: Instead of spinning up full PostgreSQL and Redis clusters in GitHub Actions (adding 2–3 minutes to every commit), a single container boots in milliseconds, runs automated Playwright/Cypress smoke tests, and tears down instantly.
+4. **🔍 Ephemeral PR Preview Environments**: Create lightweight, disposable preview environments for every pull request at near-zero cloud cost.
+5. **🛠️ Internal Tools & Admin Portals**: Low-traffic internal dashboards and utilities where multi-server complexity is unnecessary.
+6. **📟 Edge Computing & IoT Hardware**: Deploying to Raspberry Pi, field servers, or factory hardware with strict RAM limits (**uses only ~45MB RAM**).
+7. **💰 Ultra-Low Cost Deployments**: Runs comfortably on a **$3.50/month VPS with only 512MB RAM** (where Postgres + Redis alone would exhaust memory).
+8. **✈️ Air-Gapped & Offline Demos**: Export as a single `.tar` archive (`docker save`) to run client demos on laptops with zero internet or cloud dependencies.
+
+### 📈 The Real-World Architectural Progression
+
+| Project Lifecycle Phase | Recommended Architecture | Why |
+| :--- | :--- | :--- |
+| **Phase 1: Proof-of-Concept & Rapid MVP** | 📦 **Single Container** | Maximum velocity, zero ops friction, instant iteration. |
+| **Phase 2: CI/CD Smoke Tests & PR Previews** | 📦 **Single Container** | Ultra-fast pipeline execution, low runner costs, disposable testing. |
+| **Phase 3: High-Scale Production SaaS** | 🏗️ **Multi-Container (Track 2)** | Decoupled horizontal scaling, failure recovery, dedicated caching. |
+| **Phase 4: Enterprise System Integration** | 🐬 **Host DB Bridge (Track 3)** | Securely connect containerized microservices to native company DBs. |
 
 > [!CAUTION]
 > ### ⚠️ Architectural Reality Check: The "One Process per Container" Philosophy
 > 
 > Running a database, frontend, and backend inside a single Docker container goes against Docker’s core design philosophy of **"one concern / one process per container"**.
 > 
-> While bundling everything into one image is entirely practical for **rapid prototyping, offline field devices, or easy demos**, it requires specific architectural trade-offs (such as embedded single-file storage or process supervisors like supervisord) and is generally discouraged for high-scale production environments.
+> While bundling everything into one image is extremely effective for **development speed checks, CI/CD pipelines, offline field devices, or easy demos**, it requires specific architectural trade-offs (such as embedded single-file storage or process supervisors like supervisord) and is generally discouraged for high-scale production environments.
 > 
 > In enterprise production, decoupling components into independent containers—as demonstrated in **[02-multi-container/](../02-multi-container/)**—ensures independent horizontal scalability, failure isolation, and zero-downtime rolling upgrades.
 
