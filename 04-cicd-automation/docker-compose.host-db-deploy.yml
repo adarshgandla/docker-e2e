@@ -54,6 +54,8 @@ services:
       - "3001:80"
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
+    depends_on:
+      - backend
 
   # ----------------------------------------------------------------------------
   # 3. Watchtower Daemon (Auto-Deployment Agent)

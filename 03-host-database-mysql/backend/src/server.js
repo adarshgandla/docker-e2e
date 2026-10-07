@@ -169,6 +169,7 @@ app.get('/api/health', (req, res) => {
     database_host: DB_CONFIG.host,
     database_port: DB_CONFIG.port,
     database_user: DB_CONFIG.user,
+    database_name: DB_CONFIG.database,
     database_connected: dbConnected,
     database_error: lastDbError,
     time: new Date().toISOString()

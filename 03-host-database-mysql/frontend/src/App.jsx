@@ -17,10 +17,12 @@ export default function App() {
   async function fetchHealth() {
     try {
       const res = await fetch(`${API_URL}/health`)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
       setDbStatus(data)
     } catch (err) {
       console.error('Failed to fetch health status:', err)
+      setDbStatus({ api_unreachable: true })
     }
   }
 
@@ -28,6 +30,7 @@ export default function App() {
     setLoading(true)
     try {
       const res = await fetch(`${API_URL}/tasks`)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
       setTasks(data.tasks || [])
       setSource(data.source)
@@ -58,6 +61,7 @@ export default function App() {
     fetchTasks()
   }
 
+  const isApiUnreachable = dbStatus?.api_unreachable
   const isConnected = dbStatus?.database_connected
 
   return (
@@ -82,8 +86,8 @@ export default function App() {
 
       {/* Database Diagnostic Card */}
       <div style={{
-        background: isConnected ? '#ecfdf5' : '#fffbeb',
-        border: `1px solid ${isConnected ? '#a7f3d0' : '#fde68a'}`,
+        background: isConnected ? '#ecfdf5' : isApiUnreachable ? '#fef2f2' : '#fffbeb',
+        border: `1px solid ${isConnected ? '#a7f3d0' : isApiUnreachable ? '#fecaca' : '#fde68a'}`,
         borderRadius: 8,
         padding: 16,
         marginBottom: 24,
@@ -92,25 +96,35 @@ export default function App() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
           <strong>🔌 Database Target:</strong>
           <span style={{
-            background: isConnected ? '#10b981' : '#f59e0b',
+            background: isConnected ? '#10b981' : isApiUnreachable ? '#ef4444' : '#f59e0b',
             color: '#fff',
             padding: '2px 8px',
             borderRadius: 12,
             fontWeight: 600,
             fontSize: 11
           }}>
-            {isConnected ? 'CONNECTED TO HOST MYSQL' : 'FALLBACK MODE (NEEDS PERMISSIONS)'}
+            {isConnected
+              ? 'CONNECTED TO HOST MYSQL'
+              : isApiUnreachable
+              ? 'BACKEND API UNREACHABLE (CHECK PORT 4001)'
+              : 'FALLBACK MODE (NEEDS PERMISSIONS)'}
           </span>
         </div>
         <div style={{ color: '#374151' }}>
           <div>Host: <code>{dbStatus?.database_host || 'host.docker.internal'}:{dbStatus?.database_port || 3306}</code></div>
-          <div>User: <code>{dbStatus?.database_user || 'root'}</code> | Database: <code>taskflow</code></div>
-          <div>Active Data Source: <strong>{source}</strong></div>
+          <div>User: <code>{dbStatus?.database_user || 'root'}</code> | Database: <code>{dbStatus?.database_name || 'simple_app'}</code></div>
+          <div>Active Data Source: <strong>{source || (isApiUnreachable ? 'none (API unreachable)' : 'loading...')}</strong></div>
         </div>
 
-        {!isConnected && (
+        {!isConnected && !isApiUnreachable && (
           <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid #fde68a', color: '#92400e', fontSize: 12 }}>
-            💡 <strong>Quick Fix for Host MySQL:</strong> Run <code>scripts/setup-host-mysql.sql</code> in your MySQL client to grant <code>root@'%'</code> permissions and create the <code>taskflow</code> database.
+            💡 <strong>Quick Fix for Host MySQL:</strong> Ensure database <code>{dbStatus?.database_name || 'simple_app'}</code> exists and grant <code>root@'%'</code> remote access in MySQL.
+          </div>
+        )}
+
+        {isApiUnreachable && (
+          <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid #fecaca', color: '#b91c1c', fontSize: 12 }}>
+            ⚠️ <strong>Backend Unreachable:</strong> Ensure backend container is running on port 4001 (e.g. <code>docker compose up -d</code>).
           </div>
         )}
       </div>

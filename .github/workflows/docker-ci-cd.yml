@@ -134,3 +134,73 @@ jobs:
           labels: ${{ steps.meta-ui.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  # ============================================================================
+  # JOB 3: BUILD & PUBLISH HOST MYSQL BRIDGE (TRACK 3)
+  # ============================================================================
+  build-and-push-host-mysql:
+    name: 🐬 Build & Publish Host MySQL Bridge (API & UI)
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Check out repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Set up QEMU (Multi-Arch)
+        uses: docker/setup-qemu-action@v3
+
+      - name: 🐳 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 🔑 Log in to GitHub Container Registry (GHCR)
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # --- MySQL Backend API Image ---
+      - name: 🏷️ Extract MySQL Backend Metadata
+        id: meta-mysql-backend
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-mysql-backend
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=semver,pattern={{version}}
+            type=sha,format=short
+
+      - name: 🚀 Build and Push MySQL Backend Image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./03-host-database-mysql/backend
+          file: ./03-host-database-mysql/backend/Dockerfile
+          target: production
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta-mysql-backend.outputs.tags }}
+          labels: ${{ steps.meta-mysql-backend.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # --- MySQL Frontend UI Image ---
+      - name: 🏷️ Extract MySQL Frontend Metadata
+        id: meta-mysql-frontend
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-mysql-frontend
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=semver,pattern={{version}}
+            type=sha,format=short
+
+      - name: 🚀 Build and Push MySQL Frontend Image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./03-host-database-mysql/frontend
+          file: ./03-host-database-mysql/frontend/Dockerfile
+          target: production
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta-mysql-frontend.outputs.tags }}
+          labels: ${{ steps.meta-mysql-frontend.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
