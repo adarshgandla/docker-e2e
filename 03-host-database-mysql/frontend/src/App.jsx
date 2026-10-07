@@ -67,7 +67,7 @@ export default function App() {
   return (
     <div style={{ maxWidth: 680, margin: '40px auto', fontFamily: 'system-ui, -apple-system, sans-serif', padding: '0 20px', color: '#1f2937' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-        <h1 style={{ margin: 0, fontSize: 28 }}>🐳 TaskFlow</h1>
+        <h1 style={{ margin: 0, fontSize: 28 }}>🐳 TaskFlow 🚀 [CI/CD Live Auto-Deploy Test]</h1>
         <span style={{
           background: '#dbeafe',
           color: '#1e40af',
