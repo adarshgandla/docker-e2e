@@ -196,13 +196,13 @@ docker build -t taskflow-single .
 ```bash
 docker run -d \
   --name taskflow_app \
-  -p 4000:4000 \
+  -p 5000:4000 \
   -v taskflow_data:/data \
   taskflow-single
 ```
 
 ### 3. Open in Browser
-Visit **[http://localhost:4000](http://localhost:4000)**:
+Visit **[http://localhost:5000](http://localhost:5000)**:
 * **The React UI** loads instantly from the root URL `/`.
 * **The REST API** is active at `/api/tasks` and `/api/health`.
 * Create or toggle tasks in the UI; they are saved directly into `/data/tasks.db`.
