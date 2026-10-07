@@ -29,6 +29,8 @@ app.use(express.json());
 // ------------------------------------------------------------------------------
 // ⚙️ HOST DATABASE CONFIGURATION
 // ------------------------------------------------------------------------------
+const isSsl = process.env.MYSQL_SSL === 'true' || process.env.MYSQL_HOST?.includes('aivencloud.com') || process.env.MYSQL_HOST?.includes('tidbcloud.com');
+
 const DB_CONFIG = {
   host: process.env.MYSQL_HOST || 'host.docker.internal',
   port: parseInt(process.env.MYSQL_PORT || '3306', 10),
@@ -38,15 +40,21 @@ const DB_CONFIG = {
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  connectTimeout: 5000 // 5 seconds connection timeout
+  connectTimeout: 8000,
+  ssl: isSsl ? { rejectUnauthorized: false } : undefined
 };
+
+const isCloud = DB_CONFIG.host !== 'host.docker.internal' && DB_CONFIG.host !== 'localhost' && DB_CONFIG.host !== '127.0.0.1';
+const targetLabel = isCloud ? `Cloud MySQL (${DB_CONFIG.host})` : 'Host MySQL (Native)';
 
 console.log('--------------------------------------------------------------------');
 console.log('🔌 DATABASE BRIDGE INITIALIZATION:');
+console.log(`   Target:   ${targetLabel}`);
 console.log(`   Host:     ${DB_CONFIG.host}`);
 console.log(`   Port:     ${DB_CONFIG.port}`);
 console.log(`   User:     ${DB_CONFIG.user}`);
 console.log(`   Database: ${DB_CONFIG.database}`);
+console.log(`   SSL:      ${isSsl ? 'Enabled (TLS)' : 'Disabled'}`);
 console.log('--------------------------------------------------------------------');
 
 let pool = null;
@@ -164,8 +172,9 @@ initDatabase();
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
-    mode: 'host-database-bridge',
-    database_target: 'Host MySQL (Native)',
+    mode: isCloud ? 'cloud-database' : 'host-database-bridge',
+    database_target: targetLabel,
+    is_cloud: isCloud,
     database_host: DB_CONFIG.host,
     database_port: DB_CONFIG.port,
     database_user: DB_CONFIG.user,

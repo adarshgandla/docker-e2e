@@ -69,19 +69,21 @@ export default function App() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
         <h1 style={{ margin: 0, fontSize: 28 }}>🐳 TaskFlow 🚀 [CI/CD Live Auto-Deploy Test V.1]</h1>
         <span style={{
-          background: '#dbeafe',
-          color: '#1e40af',
+          background: isConnected ? (dbStatus?.is_cloud ? '#f3e8ff' : '#dbeafe') : '#f3f4f6',
+          color: isConnected ? (dbStatus?.is_cloud ? '#6b21a8' : '#1e40af') : '#4b5563',
           fontSize: 12,
           fontWeight: 700,
           padding: '4px 8px',
           borderRadius: 6
         }}>
-          TRACK 3: HOST MYSQL BRIDGE
+          {dbStatus?.is_cloud ? '☁️ CLOUD MYSQL CONNECTED' : 'TRACK 3: HOST MYSQL BRIDGE'}
         </span>
       </div>
 
       <p style={{ color: '#4b5563', fontSize: 14, margin: '0 0 20px 0' }}>
-        Containerized App connecting directly to <strong>Host-Native MySQL</strong> via <code>host.docker.internal:3306</code>.
+        {dbStatus?.is_cloud
+          ? <>Containerized App connected directly to <strong>Cloud Managed MySQL</strong> via secure internet gateway.</>
+          : <>Containerized App connecting directly to <strong>Host-Native MySQL</strong> via <code>host.docker.internal:3306</code>.</>}
       </p>
 
       {/* Database Diagnostic Card */}
@@ -104,13 +106,14 @@ export default function App() {
             fontSize: 11
           }}>
             {isConnected
-              ? 'CONNECTED TO HOST MYSQL'
+              ? (dbStatus?.is_cloud ? 'CONNECTED TO CLOUD MYSQL' : 'CONNECTED TO HOST MYSQL')
               : isApiUnreachable
               ? 'BACKEND API UNREACHABLE (CHECK PORT 4001)'
               : 'FALLBACK MODE (NEEDS PERMISSIONS)'}
           </span>
         </div>
         <div style={{ color: '#374151' }}>
+          <div>Target: <strong>{dbStatus?.database_target || (dbStatus?.is_cloud ? 'Cloud MySQL' : 'Host MySQL')}</strong></div>
           <div>Host: <code>{dbStatus?.database_host || 'host.docker.internal'}:{dbStatus?.database_port || 3306}</code></div>
           <div>User: <code>{dbStatus?.database_user || 'root'}</code> | Database: <code>{dbStatus?.database_name || 'simple_app'}</code></div>
           <div>Active Data Source: <strong>{source || (isApiUnreachable ? 'none (API unreachable)' : 'loading...')}</strong></div>
