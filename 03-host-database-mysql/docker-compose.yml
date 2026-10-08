@@ -40,7 +40,7 @@ services:
 
     environment:
       PORT: 4001
-      NODE_ENV: development
+      NODE_ENV: development #CAn be ovverriden to 'production' for production builds
       # 🔑 Database connection: Local Host MySQL or Cloud MySQL
       MYSQL_URL: ${MYSQL_URL:-}
       MYSQL_HOST: ${MYSQL_HOST:-host.docker.internal}
@@ -83,3 +83,4 @@ services:
 
     depends_on:
       - backend
+

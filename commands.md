@@ -12,6 +12,7 @@
 | **`docker images`** | List all Docker images stored on your system | `docker images` |
 | **`docker ps`** | List currently running containers | `docker ps` |
 | **`docker ps -a`** | List all containers (running + stopped/exited) | `docker ps -a` |
+| **`docker build -t <name:tag> .`** | Build an image from a Dockerfile in current directory | `docker build -t my-app:1.0 .` |
 | **`docker pull <image>`** | Download an image from Docker Hub / Registry | `docker pull nginx` |
 | **`docker run <image>`** | Create and start a new container from an image | `docker run nginx` |
 | **`docker run -p <h:c> <image>`** | Run container with host-to-container port mapping | `docker run -p 8080:80 nginx` |
@@ -58,7 +59,25 @@ docker system prune -a
 
 ## 1. Image Operations
 
-### 1.1 `docker pull <image-name>`
+### 1.1 `docker build`
+Compiles an application and its runtime environment into a portable Docker image using instructions from a Dockerfile.
+
+```bash
+# 1. Build and tag with custom image name and version:
+docker build -t my-image-name:version .
+
+# 2. Build using a custom Dockerfile name or path (-f):
+docker build -f MyCustomFile -t my-image-name .
+
+# 3. Build from scratch without using cached layers (--no-cache):
+docker build --no-cache -t my-image-name .
+```
+
+* **`-t <name:tag>`**: Names and tags the image (`repository:version`). The trailing `.` specifies the build context (current folder).
+* **`-f <filename>`**: Specifies an alternate Dockerfile path or filename (defaults to `Dockerfile` if omitted).
+* **`--no-cache`**: Forces Docker to rebuild all steps from scratch without reusing previously cached layers.
+
+### 1.2 `docker pull <image-name>`
 Downloads an image from a remote registry (Docker Hub, GHCR) to your local machine without running it.
 
 ```bash
@@ -69,7 +88,7 @@ docker pull nginx
 docker pull node:20-alpine
 ```
 
-### 1.2 `docker images`
+### 1.3 `docker images`
 Displays all images currently stored on your local disk with their Repository, Tag, Image ID, Creation date, and Virtual Size.
 
 ```bash
@@ -83,7 +102,7 @@ nginx        latest    a6bd71f485c2   2 days ago     187MB
 node         20-alpine 8b5ec1e2d930   1 week ago     178MB
 ```
 
-### 1.3 `docker rmi <image-id / image-name>`
+### 1.4 `docker rmi <image-id / image-name>`
 Deletes one or more images from local disk.
 
 ```bash
@@ -361,6 +380,9 @@ docker system df
 
 | Flag | Full Name | Description | Example Usage |
 |:---|:---|:---|:---|
+| **`-t`** | `--tag` | Names and tags an image in `name:tag` format | `docker build -t my-app:1.0 .` |
+| **`-f`** | `--file` / `--force` / `--follow` | Custom Dockerfile path, force an action, or follow logs | `docker build -f MyCustomFile -t app .` |
+| **`--no-cache`** | `--no-cache` | Disables layer caching to rebuild all steps from scratch | `docker build --no-cache -t app .` |
 | **`-d`** | `--detach` | Runs container in the background, prints container ID | `docker run -d nginx` |
 | **`-p`** | `--publish` | Maps host port to container port (`<host>:<container>`) | `docker run -p 8080:80 nginx` |
 | **`--name`** | `--name` | Assigns a custom friendly name to the container | `docker run --name my-app nginx` |
@@ -368,7 +390,6 @@ docker system df
 | **`-e`** | `--env` | Injects environment variables into the container | `docker run -e NODE_ENV=prod app` |
 | **`-it`** | `--interactive --tty` | Opens an interactive terminal session | `docker exec -it my-app sh` |
 | **`-a`** | `--all` | Includes inactive/stopped items | `docker ps -a` |
-| **`-f`** | `--force` / `--follow` | Force operation, or stream live log feed | `docker rm -f my-app` / `docker logs -f my-app` |
 
 ---
 
@@ -393,3 +414,4 @@ docker system df
 * **[Track 2: Multi-Container Microservices](./02-multi-container/)** — Compose orchestration & internal DNS
 * **[Track 3: Host Database Bridge](./03-host-database-mysql/)** — Hybrid host database networking
 * **[Track 4: CI/CD Automation](./04-cicd-automation/)** — GHCR publishing and Watchtower auto-deployments
+

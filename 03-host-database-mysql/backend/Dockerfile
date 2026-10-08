@@ -45,3 +45,4 @@ USER 1001:1001
 EXPOSE 4001
 
 CMD ["node", "src/server.js"]
+

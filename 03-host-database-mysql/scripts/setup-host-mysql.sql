@@ -35,3 +35,4 @@ INSERT INTO `tasks` (`title`, `done`) VALUES
 ('Grant root@% remote permissions in MySQL', 1);
 
 SELECT * FROM `tasks`;
+

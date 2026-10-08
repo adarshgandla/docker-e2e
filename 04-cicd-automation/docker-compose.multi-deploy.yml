@@ -107,3 +107,4 @@ volumes:
     name: postgres_prod_data
   redis_prod_data:
     name: redis_prod_data
+

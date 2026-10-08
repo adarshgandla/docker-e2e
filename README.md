@@ -87,9 +87,17 @@ Instead of installing language runtimes, web servers, and database drivers direc
 
 ### 2. The 5 Enterprise Application Environments
 
-<p align="center">
-  <img src="./docs/images/application-environments.png" alt="Enterprise Application Environments: DEV, SIT, UAT, PILOT, PROD" width="700"/>
-</p>
+```text
+=======================
+Application Environments
+=======================
+
+1) DEV   : Developers will use it for integration testing
+2) SIT   : Testing team will use it for system integration testing
+3) UAT   : Client will use it for user acceptance testing
+4) PILOT : Pre Production environment
+5) PROD  : Live Environment (end users can access our application running in prod)
+```
 
 | Environment | Primary Users | Purpose & Validation Scope | Docker & CI/CD Strategy |
 |:---|:---|:---|:---|

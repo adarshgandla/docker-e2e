@@ -50,9 +50,9 @@ networks:
 # ------------------------------------------------------------------------------
 volumes:
   postgres_data:
-    driver: local
+    driver: local  # Physical host location: /var/lib/docker/volumes/<project>_postgres_data/_data (Run: docker volume inspect 02-multi-container_postgres_data)
   redis_data:
-    driver: local
+    driver: local  # Physical host location: /var/lib/docker/volumes/<project>_redis_data/_data (Run: docker volume inspect 02-multi-container_redis_data)
 
 # ------------------------------------------------------------------------------
 # 🚀 SERVICES
@@ -113,8 +113,8 @@ services:
   # ----------------------------------------------------------------------------
   api:
     build:
-      context: ./backend
-      target: development # Uses development target for hot reload via nodemon
+      context: ./backend # This is a binded storage volume, so any changes to the backend code will be reflected in the container immediately
+      target: produ # Uses development target for hot reload via nodemon / Follows best practice of separating dev and prod builds / Production build is handled by express API server in production mode
     container_name: task_api
     restart: unless-stopped
     # Graceful Shutdown: Grants Node.js 15s to drain active requests before SIGKILL
@@ -130,8 +130,9 @@ services:
           memory: 256M     # Guaranteed baseline RAM
     environment:
       PORT: 4000
+      NODE_ENV: development # Can be overridden to 'production' for production builds
       # Database connection: Local container or Cloud DB
-      DATABASE_URL: ${DATABASE_URL:-}
+      DATABASE_URL: ${DATABASE_URL:-} #CLoud database connection string (e.g. Supabase/Neon) OR leave blank to use local Postgres
       POSTGRES_HOST: ${POSTGRES_HOST:-postgres}
       POSTGRES_PORT: ${POSTGRES_PORT:-5432}
       POSTGRES_USER: ${POSTGRES_USER:-taskuser}
@@ -139,7 +140,6 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-taskflow}
       POSTGRES_SSL: ${POSTGRES_SSL:-false}
       REDIS_URL: redis://redis:6379
-      NODE_ENV: development
     ports:
       - "${API_PORT:-4000}:4000"
     volumes:
@@ -150,11 +150,11 @@ services:
       - /app/node_modules
     depends_on:
       postgres:
-        condition: service_healthy
+        condition: service_healthy # Wait for Postgres to be healthy before starting API (otherwise connection errors may occur)
       redis:
-        condition: service_healthy
+        condition: service_healthy # Wait for Redis to be healthy before starting API (otherwise connection errors may occur)
     networks:
-      - app-network
+      - app-network # Allows API to resolve 'postgres' and 'redis' hostnames via Docker internal DNS
 
   # ----------------------------------------------------------------------------
   # 4. FRONTEND SERVICE: React (Vite Dev Server)
@@ -162,11 +162,11 @@ services:
   frontend:
     build:
       context: ./frontend
-      target: development # Uses Vite dev server with Hot Module Replacement (HMR)
+      target: development # Uses Vite dev server with Hot Module Replacement (HMR) / Ovverides default Nginx production build / Follows best practice of separating dev and prod builds / Production build is handled by express API server in production mode
     container_name: task_frontend
     restart: unless-stopped
     environment:
-      VITE_API_URL: http://localhost:${API_PORT:-4000}
+      VITE_API_URL: http://localhost:${API_PORT:-4000} # `
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
     volumes:
@@ -175,6 +175,6 @@ services:
       # 2. Anonymous volume: preserves container-compiled Linux node_modules
       - /app/node_modules
     depends_on:
-      - api
+      - api # Wait for API to be healthy before starting frontend (otherwise connection errors may occur)
     networks:
-      - app-network
+      - app-network # Allows frontend to resolve 'api' hostname via Docker internal DNS (e.g: postgres, redis, api, frontend through dns names - postgres:5432, redis:6379, api:4000, frontend:3000)

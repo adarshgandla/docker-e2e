@@ -59,22 +59,41 @@ FROM node:20-alpine3.20 AS production
 WORKDIR /app
 ENV NODE_ENV=production
 
-# Security: Run as non-root user (UID 1001) instead of root (UID 0)
+# 🛡️ SECURITY STEP 1: Create an unprivileged system user and group (Alpine Linux)
+# - 'addgroup -g 1001 -S nodejs' : Creates system group (-S) with Group ID 1001 (-g) named 'nodejs'
+# - '&&'                         : Chains commands into a SINGLE Docker image layer (saves disk space)
+# - 'adduser -S -u 1001 ...'     : Creates system user (-S) with User ID 1001 (-u), assigned to group (-G nodejs), named 'nodejs'
 RUN addgroup -g 1001 -S nodejs && adduser -S -u 1001 -G nodejs nodejs
 
-# Copy dependency manifests
+# ⚡ LAYER CACHE OPTIMIZATION: Copy dependency manifests first
+# - 'package*.json' : Wildcard matches both 'package.json' and 'package-lock.json'
+# - './'            : Destination is current container WORKDIR (/app)
+# Docker caches this layer: editing server.js later will NEVER re-trigger 'npm install'!
 COPY package*.json ./
 
-# Install only production dependencies (skips nodemon)
+# 📦 PRODUCTION INSTALL: Install only production runtime dependencies
+# - '--omit=dev' : Skips all devDependencies (e.g. nodemon, linters) to keep production image lean
 RUN npm install --omit=dev
 
-# Copy app code with non-root ownership
+# 📂 CODE TRANSFER WITH PERMISSIONS:
+# - '--chown=1001:1001' : Sets file ownership to UID:GID 1001:1001 so non-root user owns the code
+# - First '.'           : Source on host (all files not excluded by .dockerignore)
+# - Second '.'          : Destination in container (/app)
+# for new user 1002 they will have permissions as well, but the ownership will be 1001:1001. This is important for security and proper file access.
+# here group 1001 is the group that the user 1001 belongs to, so any files created by user 1001 will have group ownership of 1001 as well. This allows other users in the same group (like user 1002) to access those files if the permissions allow it.
+# if user belong to different group, they will not have access to the files owned by user 1001 unless the permissions are set to allow it. This is a common practice in multi-user environments to ensure that users can only access files that they are supposed to.
+# in the same owned group every new user will have auto generated uid and gid as 1002:1001, 1003:1001, 1004:1001, etc. and they will have access to the files owned by user 1001 as long as the permissions allow it.
+# Server 2 Env can be set to GID 1002 ,And same UID user from GID 1001 can access both group files as long as the permissions allow it. This allows multi traffic and multi-user access to the same files in a secure way.
 COPY --chown=1001:1001 . .
 
-# Switch to non-root user
+# 🔒 SECURITY STEP 2: Drop root (UID 0) and switch to unprivileged user (UID 1001)
+# - Setting up the entire container environment to run as a non-root user is a security best practice
+# - Subsequent instructions (CMD) execute as non-root user 1001, preventing container-escape attacks
+# - This is a best practice for production containers, as it limits the potential damage if an attacker compromises the application.
 USER 1001:1001
 
 EXPOSE 4000
 
 # Launch server with direct node binary (PID 1 receives SIGTERM signals directly)
 CMD ["node", "src/server.js"]
+

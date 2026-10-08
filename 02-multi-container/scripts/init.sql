@@ -9,3 +9,4 @@ INSERT INTO tasks (title) VALUES
   ('Learn Docker'),
   ('Build TaskFlow'),
   ('Ship to production');
+
