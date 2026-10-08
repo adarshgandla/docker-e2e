@@ -30,7 +30,7 @@ FROM node:20-alpine3.20 AS production
 WORKDIR /app
 ENV NODE_ENV=production
 
-# 🛡️ SECURITY AUDIT HARDENING (SOC 2 / CIS Benchmark):
+# Security: Run as non-root user (UID 1001) instead of root (UID 0)
 RUN addgroup -g 1001 -S appgroup && \
     adduser -S -u 1001 -G appgroup appuser
 
@@ -39,7 +39,7 @@ RUN npm install --omit=dev
 
 COPY --chown=1001:1001 . .
 
-# 🔒 DROP ROOT PRIVILEGES:
+# Switch to non-root user
 USER 1001:1001
 
 EXPOSE 4001

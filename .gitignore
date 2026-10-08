@@ -26,6 +26,7 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Presenter Local Sidebar & HUD
+# Presenter Local Files (Untracked)
 presenter-sidebar.md
 presenter-hud.html
+presenter-guide.md

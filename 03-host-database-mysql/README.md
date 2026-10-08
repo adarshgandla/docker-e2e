@@ -102,6 +102,33 @@ docker compose up -d --build
 
 ---
 
+## ☁️ Optional: Connecting to Cloud MySQL (Aiven / TiDB Cloud / AWS RDS)
+
+Instead of your laptop's local MySQL, you can connect this stack to a cloud-managed MySQL:
+
+1. Update `.env` using either **Style A** (Single URL) or **Style B** (Separate fields):
+   - **Style A (Single URL):**
+     ```env
+     MYSQL_URL=mysql://avnadmin:your_password@mysql-xxxx.aivencloud.com:18320/defaultdb?ssl-mode=REQUIRED
+     ```
+   - **Style B (Separate Fields):**
+     ```env
+     MYSQL_HOST=mysql-xxxx.aivencloud.com
+     MYSQL_PORT=18320
+     MYSQL_USER=avnadmin
+     MYSQL_PASSWORD=your_password
+     MYSQL_DATABASE=defaultdb
+     MYSQL_SSL=true
+     ```
+2. Restart the stack:
+   ```bash
+   docker compose down
+   docker compose up -d
+   ```
+The backend automatically connects over SSL/TLS and manages your tables in the cloud!
+
+---
+
 ## 🔌 Port Allocation Across All Tracks
 
 | Track | Directory | Architecture | Host URL |

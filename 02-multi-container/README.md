@@ -123,3 +123,31 @@ docker compose down
 # Or stop and completely wipe database volumes for a clean slate
 docker compose down -v
 ```
+
+---
+
+## ☁️ Optional: Connecting to Cloud Database (Supabase / Neon / RDS)
+
+Instead of the local PostgreSQL container, you can connect this stack to a cloud-managed PostgreSQL:
+
+1. Update `.env` using either **Style A** (Single URL) or **Style B** (Separate fields):
+   - **Style A (Single URL):**
+     ```env
+     DATABASE_URL=postgresql://postgres.[REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres
+     ```
+   - **Style B (Separate Fields):**
+     ```env
+     POSTGRES_HOST=aws-0-[REGION].pooler.supabase.com
+     POSTGRES_PORT=6543
+     POSTGRES_USER=postgres.[REF]
+     POSTGRES_PASSWORD=your_cloud_password
+     POSTGRES_DB=postgres
+     POSTGRES_SSL=true
+     ```
+2. Restart the stack:
+   ```bash
+   docker compose down
+   docker compose up -d
+   ```
+The backend automatically enables SSL/TLS encryption and writes directly to your cloud database!
+

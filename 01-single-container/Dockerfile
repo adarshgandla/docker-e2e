@@ -32,14 +32,11 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV DB_DIR=/data
 
-# 🛡️ SECURITY AUDIT HARDENING (SOC 2 / CIS Benchmark):
-# Create a dedicated, unprivileged system user and group (UID 1001)
+# Security: Run as non-root user (UID 1001) instead of root (UID 0)
 RUN addgroup -g 1001 -S appgroup && \
     adduser -S -u 1001 -G appgroup appuser
 
-# 💾 PERSISTENCE DIRECTORY (Runtime Disk Writes):
-# SQLite requires write permissions to /data at runtime. We explicitly grant
-# ownership to numeric UID/GID 1001:1001 before dropping privileges.
+# Persistence: grant write access for SQLite database
 RUN mkdir -p /data && chown -R 1001:1001 /data
 
 # Install backend production dependencies
@@ -49,17 +46,12 @@ RUN npm install --omit=dev
 # Copy backend server source code
 COPY --chown=1001:1001 src/ ./src/
 
-# 📦 MULTI-STAGE COPY:
-# Copy the compiled static React frontend from STAGE 1 directly into /app/public
+# Copy compiled React frontend into public directory
 COPY --from=frontend-builder --chown=1001:1001 /app/frontend/dist ./public/
 
-# Declare /data as a Docker Volume so SQLite files persist across container restarts
 VOLUME /data
 
-# 🔒 DROP ROOT PRIVILEGES (SOC 2 & Kubernetes runAsNonRoot Compliance):
-# Using numeric UID:GID (1001:1001) instead of text names ('appuser') allows
-# Kubernetes admission webhooks and container runtimes to verify non-root
-# execution directly from the OCI image manifest without inspecting /etc/passwd.
+# Switch to non-root user
 USER 1001:1001
 
 # Expose single unified web + API port

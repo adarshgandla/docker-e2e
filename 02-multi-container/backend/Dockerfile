@@ -4,7 +4,7 @@
 # This Dockerfile demonstrates modern production best practices:
 # 1. Multi-stage build pattern (separate development and production targets)
 # 2. Docker layer caching optimization (package*.json copied before source code)
-# 3. Enterprise security: Non-root user execution (SOC 2 / CIS Benchmark 4.1)
+# 3. Security: Non-root user execution (never run app as root)
 # 4. Lean production image footprint (node:20-alpine base image ~120MB)
 # ==============================================================================
 
@@ -59,25 +59,19 @@ FROM node:20-alpine3.20 AS production
 WORKDIR /app
 ENV NODE_ENV=production
 
-# 🛡️ SECURITY AUDIT HARDENING (SOC 2 & CIS Benchmark Compliance):
-# Standard base images default to root (UID 0). If an RCE exploit occurs in the app,
-# an attacker gains root privileges. We create a restricted system group & user (UID 1001)
-# with no interactive shell (-S) to ensure least-privilege execution.
+# Security: Run as non-root user (UID 1001) instead of root (UID 0)
 RUN addgroup -g 1001 -S nodejs && adduser -S -u 1001 -G nodejs nodejs
 
 # Copy dependency manifests
 COPY package*.json ./
 
-# Production dependency install: --omit=dev excludes nodemon and test tools,
-# saving 50-70% disk space and eliminating unnecessary vulnerability surface.
+# Install only production dependencies (skips nodemon)
 RUN npm install --omit=dev
 
-# Copy application source code and explicitly assign ownership to unprivileged user
+# Copy app code with non-root ownership
 COPY --chown=1001:1001 . .
 
-# 🔒 DROP ROOT PRIVILEGES (SOC 2 & Kubernetes runAsNonRoot Compliance):
-# Using numeric UID:GID (1001:1001) guarantees Kubernetes admission controllers
-# pass static manifest inspection without needing to resolve names against /etc/passwd.
+# Switch to non-root user
 USER 1001:1001
 
 EXPOSE 4000

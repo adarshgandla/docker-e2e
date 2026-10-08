@@ -130,8 +130,14 @@ services:
           memory: 256M     # Guaranteed baseline RAM
     environment:
       PORT: 4000
-      # Internal network DNS: uses service name '@postgres' and '@redis', NOT localhost
-      DATABASE_URL: postgresql://${POSTGRES_USER:-taskuser}:${POSTGRES_PASSWORD:-taskpass123}@postgres:5432/${POSTGRES_DB:-taskflow}
+      # Database connection: Local container or Cloud DB
+      DATABASE_URL: ${DATABASE_URL:-}
+      POSTGRES_HOST: ${POSTGRES_HOST:-postgres}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_USER: ${POSTGRES_USER:-taskuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-taskpass123}
+      POSTGRES_DB: ${POSTGRES_DB:-taskflow}
+      POSTGRES_SSL: ${POSTGRES_SSL:-false}
       REDIS_URL: redis://redis:6379
       NODE_ENV: development
     ports:

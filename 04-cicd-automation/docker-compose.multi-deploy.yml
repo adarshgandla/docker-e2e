@@ -55,7 +55,13 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=4000
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-taskflow}:${POSTGRES_PASSWORD:-taskflow_secure_pass}@postgres:5432/${POSTGRES_DB:-taskflow}
+      - DATABASE_URL=${DATABASE_URL:-}
+      - POSTGRES_HOST=${POSTGRES_HOST:-postgres}
+      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
+      - POSTGRES_USER=${POSTGRES_USER:-taskflow}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-taskflow_secure_pass}
+      - POSTGRES_DB=${POSTGRES_DB:-taskflow}
+      - POSTGRES_SSL=${POSTGRES_SSL:-false}
       - REDIS_URL=redis://redis:6379
     networks:
       - prod-network

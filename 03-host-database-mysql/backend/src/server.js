@@ -29,20 +29,51 @@ app.use(express.json());
 // ------------------------------------------------------------------------------
 // ⚙️ HOST DATABASE CONFIGURATION
 // ------------------------------------------------------------------------------
-const isSsl = process.env.MYSQL_SSL === 'true' || process.env.MYSQL_HOST?.includes('aivencloud.com') || process.env.MYSQL_HOST?.includes('tidbcloud.com');
+const rawMysqlUrl = process.env.MYSQL_URL;
+let DB_CONFIG = {};
+let isSsl = false;
 
-const DB_CONFIG = {
-  host: process.env.MYSQL_HOST || 'host.docker.internal',
-  port: parseInt(process.env.MYSQL_PORT || '3306', 10),
-  user: process.env.MYSQL_USER || 'root',
-  password: process.env.MYSQL_PASSWORD || 'root',
-  database: process.env.MYSQL_DATABASE || 'simple_app',
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
-  connectTimeout: 8000,
-  ssl: isSsl ? { rejectUnauthorized: false } : undefined
-};
+if (rawMysqlUrl && rawMysqlUrl.trim() !== '') {
+  isSsl = rawMysqlUrl.includes('ssl') || rawMysqlUrl.includes('aivencloud.com') || rawMysqlUrl.includes('tidbcloud.com') || process.env.MYSQL_SSL === 'true';
+  try {
+    const parsed = new URL(rawMysqlUrl);
+    DB_CONFIG = {
+      host: parsed.hostname,
+      port: parseInt(parsed.port || '3306', 10),
+      user: decodeURIComponent(parsed.username || 'root'),
+      password: decodeURIComponent(parsed.password || ''),
+      database: (parsed.pathname || '/simple_app').replace(/^\//, '') || 'simple_app',
+      waitForConnections: true,
+      connectionLimit: 10,
+      queueLimit: 0,
+      connectTimeout: 8000,
+      ssl: isSsl ? { rejectUnauthorized: false } : undefined
+    };
+  } catch (urlErr) {
+    DB_CONFIG = {
+      uri: rawMysqlUrl,
+      waitForConnections: true,
+      connectionLimit: 10,
+      queueLimit: 0,
+      connectTimeout: 8000,
+      ssl: isSsl ? { rejectUnauthorized: false } : undefined
+    };
+  }
+} else {
+  isSsl = process.env.MYSQL_SSL === 'true' || process.env.MYSQL_HOST?.includes('aivencloud.com') || process.env.MYSQL_HOST?.includes('tidbcloud.com');
+  DB_CONFIG = {
+    host: process.env.MYSQL_HOST || 'host.docker.internal',
+    port: parseInt(process.env.MYSQL_PORT || '3306', 10),
+    user: process.env.MYSQL_USER || 'root',
+    password: process.env.MYSQL_PASSWORD || 'root',
+    database: process.env.MYSQL_DATABASE || 'simple_app',
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0,
+    connectTimeout: 8000,
+    ssl: isSsl ? { rejectUnauthorized: false } : undefined
+  };
+}
 
 const isCloud = DB_CONFIG.host !== 'host.docker.internal' && DB_CONFIG.host !== 'localhost' && DB_CONFIG.host !== '127.0.0.1';
 const targetLabel = isCloud ? `Cloud MySQL (${DB_CONFIG.host})` : 'Host MySQL (Native)';
@@ -50,10 +81,10 @@ const targetLabel = isCloud ? `Cloud MySQL (${DB_CONFIG.host})` : 'Host MySQL (N
 console.log('--------------------------------------------------------------------');
 console.log('🔌 DATABASE BRIDGE INITIALIZATION:');
 console.log(`   Target:   ${targetLabel}`);
-console.log(`   Host:     ${DB_CONFIG.host}`);
-console.log(`   Port:     ${DB_CONFIG.port}`);
-console.log(`   User:     ${DB_CONFIG.user}`);
-console.log(`   Database: ${DB_CONFIG.database}`);
+console.log(`   Host:     ${DB_CONFIG.host || 'URI Mode'}`);
+console.log(`   Port:     ${DB_CONFIG.port || 3306}`);
+console.log(`   User:     ${DB_CONFIG.user || 'N/A'}`);
+console.log(`   Database: ${DB_CONFIG.database || 'default'}`);
 console.log(`   SSL:      ${isSsl ? 'Enabled (TLS)' : 'Disabled'}`);
 console.log('--------------------------------------------------------------------');
 
@@ -81,13 +112,18 @@ async function initDatabase() {
       port: DB_CONFIG.port,
       user: DB_CONFIG.user,
       password: DB_CONFIG.password,
+      ssl: DB_CONFIG.ssl,
       connectTimeout: 5000
     });
 
-    console.log(`✅ Successfully connected to Host MySQL on ${DB_CONFIG.host}:${DB_CONFIG.port}!`);
+    console.log(`✅ Successfully connected to ${targetLabel} on ${DB_CONFIG.host}:${DB_CONFIG.port}!`);
 
-    // 2. Ensure database exists
-    await serverConn.query(`CREATE DATABASE IF NOT EXISTS \`${DB_CONFIG.database}\`;`);
+    // 2. Ensure database exists (wrapped in try/catch for cloud permissions)
+    try {
+      await serverConn.query(`CREATE DATABASE IF NOT EXISTS \`${DB_CONFIG.database}\`;`);
+    } catch (createErr) {
+      // Safe to ignore if database already exists or user has restricted permissions
+    }
     await serverConn.end();
 
     // 3. Establish connection pool to the database

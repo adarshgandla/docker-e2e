@@ -38,7 +38,7 @@ on:
 # 🔐 LEAST PRIVILEGE PERMISSIONS
 # ------------------------------------------------------------------------------
 permissions:
-  contents: read   # Read-only access to repository source code (SOC 2 best practice)
+  contents: read   # Read-only access to repository source code (security best practice)
   packages: write  # Write access to publish Docker container images to ghcr.io
 
 # ------------------------------------------------------------------------------

@@ -130,7 +130,7 @@ In real-world software engineering, you do not always need or want the overhead 
 
 ### 3. Non-Root Least Privilege Security
 * The container creates an unprivileged user `appuser (UID 1001)`.
-* Process execution drops root rights before launching `server.js` to meet enterprise compliance (SOC 2 & CIS Docker Benchmark).
+* Process execution drops root rights before launching `server.js` to ensure the container runs with least-privilege security.
 
 ---
 
@@ -214,9 +214,9 @@ Stop and remove the container, then start a brand-new container with the same vo
 docker rm -f taskflow_app
 
 # Start a new container with the same volume
-docker run -d -p 4000:4000 -v taskflow_data:/data --name taskflow_app taskflow-single
+docker run -d -p 5000:4000 -v taskflow_data:/data --name taskflow_app taskflow-single
 ```
-Refresh **[http://localhost:4000](http://localhost:4000)** — all your tasks remain intact!
+Refresh **[http://localhost:5000](http://localhost:5000)** — all your tasks remain intact!
 
 ### 5. Inspect the SQLite Database Inside the Container
 ```bash

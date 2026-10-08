@@ -41,12 +41,14 @@ services:
     environment:
       PORT: 4001
       NODE_ENV: development
-      # 🔑 THE ONLY NEW CONCEPT: Connecting to Host Machine MySQL
+      # 🔑 Database connection: Local Host MySQL or Cloud MySQL
+      MYSQL_URL: ${MYSQL_URL:-}
       MYSQL_HOST: ${MYSQL_HOST:-host.docker.internal}
       MYSQL_PORT: ${MYSQL_PORT:-3306}
       MYSQL_USER: ${MYSQL_USER:-root}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-root}
       MYSQL_DATABASE: ${MYSQL_DATABASE:-simple_app}
+      MYSQL_SSL: ${MYSQL_SSL:-false}
 
     # 🌐 LINUX & CROSS-PLATFORM COMPATIBILITY:
     # Maps 'host.docker.internal' to the host machine gateway IP

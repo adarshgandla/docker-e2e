@@ -8,9 +8,34 @@ const PORT = process.env.PORT || 4000;
 
 app.use(cors());
 app.use(express.json());
-const db = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
+// Supports BOTH:
+// 1. Single Connection URI (e.g. DATABASE_URL)
+// 2. Separate variables (POSTGRES_HOST, POSTGRES_PORT, POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB)
+const rawDbUrl = process.env.DATABASE_URL;
+let poolConfig = {};
+
+if (rawDbUrl && rawDbUrl.trim() !== '') {
+  const isSsl = rawDbUrl.includes('supabase.co') || rawDbUrl.includes('sslmode=') || process.env.POSTGRES_SSL === 'true';
+  const cleanDbUrl = isSsl ? rawDbUrl.replace(/[?&]sslmode=[^&]+/, '') : rawDbUrl;
+  poolConfig = {
+    connectionString: cleanDbUrl,
+    ssl: isSsl ? { rejectUnauthorized: false } : false
+  };
+  console.log(`🔌 Database Mode: Single URI (${isSsl ? 'SSL Enabled' : 'SSL Disabled'})`);
+} else {
+  const isSsl = process.env.POSTGRES_SSL === 'true' || process.env.POSTGRES_HOST?.includes('supabase.co');
+  poolConfig = {
+    host: process.env.POSTGRES_HOST || 'postgres',
+    port: parseInt(process.env.POSTGRES_PORT || '5432', 10),
+    user: process.env.POSTGRES_USER || 'taskuser',
+    password: process.env.POSTGRES_PASSWORD || 'taskpass123',
+    database: process.env.POSTGRES_DB || 'taskflow',
+    ssl: isSsl ? { rejectUnauthorized: false } : false
+  };
+  console.log(`🔌 Database Mode: Host ${poolConfig.host}:${poolConfig.port} (${isSsl ? 'SSL Enabled' : 'SSL Disabled'})`);
+}
+
+const db = new Pool(poolConfig);
 
 const cache = createClient({ url: process.env.REDIS_URL });
 
@@ -81,6 +106,17 @@ async function startServer(retries = 5, delay = 2000) {
     try {
       await db.connect();
       console.log('✅ PostgreSQL connected');
+
+      // Automatically create tasks table if it does not exist (e.g. on new Supabase database)
+      await db.query(`
+        CREATE TABLE IF NOT EXISTS tasks (
+          id SERIAL PRIMARY KEY,
+          title VARCHAR(255) NOT NULL,
+          done BOOLEAN DEFAULT FALSE,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+      console.log('📋 Verified tasks table schema in database.');
       const server = app.listen(PORT, '0.0.0.0', () => {
         console.log(`🚀 API running on port ${PORT}`);
       });

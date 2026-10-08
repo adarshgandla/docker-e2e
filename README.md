@@ -113,7 +113,7 @@ Instead of installing language runtimes, web servers, and database drivers direc
 | **Core Paradigm** | Single self-contained image | Decoupled services in Docker network | Container app bridged to host-native DB |
 | **Technologies** | Node Express + SQLite + React SPA | React UI + Express + Postgres 16 + Redis 7 | React UI + Express + Native Host MySQL 8 |
 | **RAM Footprint** | **~40MB – 60MB total** | ~250MB – 500MB total | **~45MB – 70MB total** (excl. host DB) |
-| **Default Host Port**| **Port 5000** (`http://localhost:5000`) | **Port 3000** (UI) & **Port 4000** (API) | **Port 4001** (`http://localhost:4001`) |
+| **Default Host Port**| **Port 5000** (`http://localhost:5000`) | **Port 3000** (UI) & **Port 4000** (API) | **Port 3001** (UI) & **Port 4001** (API) |
 | **Data Storage** | Embedded SQLite file on named volume | Dedicated PostgreSQL data cluster volume | Native MySQL instance on Host Machine |
 | **Caching Engine** | In-memory process cache | Dedicated Redis 7 container | In-memory connection pool |
 | **Ideal For** | MVPs, Internal Portals, IoT Edge | High-Concurrency SaaS, Microservices | Existing Corporate DBs, Dev Workstations |
@@ -247,9 +247,9 @@ Open these files in any modern web browser for immediate interactive training:
 
 ## 🛡️ Enterprise Production Standards Enforced
 
-1. **Non-Root Execution (SOC 2, CIS Benchmark 4.1 & Kubernetes `runAsNonRoot` Compliance)**
-   * Avoids running containers as default `root (UID 0)`.
-   * Enforces **numeric UID/GID context (`USER 1001:1001`)** rather than string names (`USER appuser`) so Kubernetes admission controllers and OCI runtimes verify non-root compliance directly from image manifests without inspecting `/etc/passwd`.
+1. **Non-Root Execution (`USER 1001:1001`)**
+   * Avoids running containers as default `root (UID 0)` to prevent container breakout vulnerabilities.
+   * Enforces **numeric user ID (`USER 1001:1001`)** so the container runtime can verify non-root execution cleanly.
    * **Multi-Distribution Syntax Standard**:
      * **Alpine (BusyBox)**: `RUN addgroup -g 1001 -S appgroup && adduser -S -u 1001 -G appgroup appuser`
      * **Ubuntu / Debian**: `RUN groupadd -g 1001 appgroup && useradd -r -u 1001 -g appgroup appuser`

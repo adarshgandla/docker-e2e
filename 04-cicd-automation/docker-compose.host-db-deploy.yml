@@ -32,11 +32,13 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=4001
+      - MYSQL_URL=${MYSQL_URL:-}
       - MYSQL_HOST=${MYSQL_HOST:-host.docker.internal}
       - MYSQL_PORT=${MYSQL_PORT:-3306}
       - MYSQL_USER=${MYSQL_USER:-root}
       - MYSQL_PASSWORD=${MYSQL_PASSWORD:-root}
       - MYSQL_DATABASE=${MYSQL_DATABASE:-simple_app}
+      - MYSQL_SSL=${MYSQL_SSL:-false}
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
 
